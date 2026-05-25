@@ -1,0 +1,32 @@
+{
+  "name": "@onyx/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "seed": "tsx src/scripts/seed.ts",
+    "demo": "tsx src/scripts/demo-runner.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "@fastify/websocket": "^10.0.1",
+    "better-sqlite3": "^11.3.0",
+    "chokidar": "^3.6.0",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.28.1",
+    "nanoid": "^5.0.7",
+    "systeminformation": "^5.23.5",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^20.14.10",
+    "@types/ws": "^8.5.12",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3"
+  }
+}

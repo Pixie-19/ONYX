@@ -1,0 +1,18 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/blackout/page": "/blackout",
+  "/connect/page": "/connect",
+  "/demo/page": "/demo",
+  "/events/page": "/events",
+  "/graph/page": "/graph",
+  "/infrastructure/page": "/infrastructure",
+  "/intelligence/page": "/intelligence",
+  "/page": "/",
+  "/replay/page": "/replay",
+  "/settings/page": "/settings",
+  "/sql/page": "/sql",
+  "/stability/page": "/stability",
+  "/telemetry/page": "/telemetry",
+  "/workspace/page": "/workspace"
+}

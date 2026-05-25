@@ -1,0 +1,18 @@
+{
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/blackout/page": "app/blackout/page.js",
+  "/connect/page": "app/connect/page.js",
+  "/demo/page": "app/demo/page.js",
+  "/events/page": "app/events/page.js",
+  "/graph/page": "app/graph/page.js",
+  "/infrastructure/page": "app/infrastructure/page.js",
+  "/intelligence/page": "app/intelligence/page.js",
+  "/page": "app/page.js",
+  "/replay/page": "app/replay/page.js",
+  "/settings/page": "app/settings/page.js",
+  "/sql/page": "app/sql/page.js",
+  "/stability/page": "app/stability/page.js",
+  "/telemetry/page": "app/telemetry/page.js",
+  "/workspace/page": "app/workspace/page.js"
+}

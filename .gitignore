@@ -1,0 +1,16 @@
+node_modules
+.next
+dist
+build
+*.log
+.env
+.env.local
+.DS_Store
+agent/data/*.db
+agent/data/*.db-journal
+agent/data/*.db-wal
+agent/data/*.db-shm
+*.tsbuildinfo
+.cache
+.turbo
+coverage

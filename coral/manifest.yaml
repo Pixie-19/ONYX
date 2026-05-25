@@ -1,0 +1,114 @@
+# Coral Custom Source — onyx_cognition
+# Registers ONYX as a relational cognition source over an MCP transport.
+
+apiVersion: coral.sh/v1
+kind: Source
+metadata:
+  name: onyx_cognition
+  namespace: onyx
+  labels:
+    domain: execution-intelligence
+    tier: infrastructure
+    locality: local-first
+  description: >
+    Relational cognition source that ingests live workspace, runtime, and
+    system telemetry from the ONYX agent. Exposes six joinable tables that
+    capture the full causal topology of an engineering loop.
+
+spec:
+  transport:
+    kind: mcp
+    endpoint: stdio://onyx-agent/mcp
+    keepalive: 5s
+    auth:
+      mode: local
+  ingestion:
+    mode: streaming
+    contract: jsonl
+    path: ../agent/data/jsonl
+    rotation: daily
+    checkpoint: ../agent/data/jsonl/.checkpoint
+    backpressure:
+      strategy: drop-oldest
+      buffer: 65536
+  schemas:
+    - workspace_entropy
+    - network_trajectories
+    - system_cybernetics
+    - execution_snapshots
+    - rulebook_constraints
+    - replay_events
+    - workspaces
+    - workspace_processes
+    - github_commits
+  tables:
+    - name: workspace_entropy
+      grain: file_event
+      file: schemas/workspace_entropy.sql
+      partitions: [day]
+    - name: network_trajectories
+      grain: probe_tick
+      file: schemas/network_trajectories.sql
+      partitions: [day, endpoint]
+    - name: system_cybernetics
+      grain: telemetry_tick
+      file: schemas/system_cybernetics.sql
+      partitions: [day]
+    - name: execution_snapshots
+      grain: ast_commit
+      file: schemas/execution_snapshots.sql
+      partitions: [day, file]
+    - name: rulebook_constraints
+      grain: rule_evaluation
+      file: schemas/rulebook_constraints.sql
+    - name: replay_events
+      grain: causal_event
+      file: schemas/replay_events.sql
+      partitions: [day, severity]
+    - name: workspaces
+      grain: workspace
+      file: schemas/workspaces.sql
+    - name: workspace_processes
+      grain: process_observation
+      file: schemas/workspace_processes.sql
+      partitions: [day, workspace_id]
+    - name: github_commits
+      grain: commit
+      file: schemas/github_commits.sql
+      partitions: [workspace_id]
+  relationships:
+    - from: workspace_entropy.file
+      to: execution_snapshots.file
+      kind: many-to-one
+    - from: replay_events.trace_id
+      to: replay_events.parent_trace_id
+      kind: causal
+    - from: network_trajectories.endpoint
+      to: rulebook_constraints.target
+      kind: many-to-one
+    - from: workspace_processes.workspace_id
+      to: workspaces.id
+      kind: many-to-one
+    - from: github_commits.workspace_id
+      to: workspaces.id
+      kind: many-to-one
+  capabilities:
+    - relational-joins
+    - temporal-replay
+    - cross-source-intelligence
+    - causal-traversal
+    - streaming-ingest
+
+policy:
+  retention:
+    workspace_entropy: 14d
+    network_trajectories: 14d
+    system_cybernetics: 14d
+    execution_snapshots: 90d
+    rulebook_constraints: 365d
+    replay_events: 90d
+    workspaces: 365d
+    workspace_processes: 30d
+    github_commits: 365d
+  pii: none
+  egress: forbidden
