@@ -12,9 +12,19 @@ interface SparklineProps {
   min?: number;
 }
 
+/**
+ * Minimal sparkline — soft, premium feel. Default colour is the brand indigo;
+ * area gradient is faint so the line stays the focal point.
+ */
 export function Sparkline({
-  values, width = 220, height = 40, stroke = '#22e8ff',
-  fill = 'rgba(34,232,255,0.15)', thresholds, max, min,
+  values,
+  width = 220,
+  height = 40,
+  stroke = '#4F46E5',
+  fill = 'rgba(79,70,229,0.10)',
+  thresholds,
+  max,
+  min,
 }: SparklineProps) {
   const { path, area, last } = useMemo(() => {
     if (values.length === 0) return { path: '', area: '', last: 0 };
@@ -26,7 +36,7 @@ export function Sparkline({
     let a = '';
     values.forEach((v, i) => {
       const x = i * step;
-      const y = height - ((v - lo) / range) * (height - 2) - 1;
+      const y = height - ((v - lo) / range) * (height - 4) - 2;
       p += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
       a += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
     });
@@ -37,20 +47,39 @@ export function Sparkline({
   return (
     <svg width={width} height={height} className="block">
       {thresholds?.warn !== undefined && (
-        <line x1="0" x2={width} y1={height - thresholds.warn * height} y2={height - thresholds.warn * height} stroke="rgba(255,184,74,0.18)" strokeDasharray="2 4" />
+        <line
+          x1="0"
+          x2={width}
+          y1={height - thresholds.warn * height}
+          y2={height - thresholds.warn * height}
+          stroke="rgba(245,158,11,0.30)"
+          strokeDasharray="3 4"
+        />
       )}
       {thresholds?.crit !== undefined && (
-        <line x1="0" x2={width} y1={height - thresholds.crit * height} y2={height - thresholds.crit * height} stroke="rgba(255,45,107,0.22)" strokeDasharray="2 4" />
+        <line
+          x1="0"
+          x2={width}
+          y1={height - thresholds.crit * height}
+          y2={height - thresholds.crit * height}
+          stroke="rgba(239,68,68,0.30)"
+          strokeDasharray="3 4"
+        />
       )}
       <path d={area} fill={fill} />
-      <path d={path} fill="none" stroke={stroke} strokeWidth="1.4" />
+      <path d={path} fill="none" stroke={stroke} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
       {values.length > 0 && (
         <circle
-          cx={width}
-          cy={height - ((last - (min ?? Math.min(...values))) / ((max ?? Math.max(...values)) - (min ?? Math.min(...values)) || 1)) * (height - 2) - 1}
-          r="2"
+          cx={width - 1}
+          cy={
+            height -
+            ((last - (min ?? Math.min(...values))) /
+              ((max ?? Math.max(...values)) - (min ?? Math.min(...values)) || 1)) *
+              (height - 4) -
+            2
+          }
+          r="2.5"
           fill={stroke}
-          style={{ filter: `drop-shadow(0 0 4px ${stroke})` }}
         />
       )}
     </svg>

@@ -15,16 +15,16 @@ import { ReplayCinema } from '@/components/overlays/ReplayCinema';
 import { SonnerHost } from '@/components/overlays/SonnerHost';
 
 /**
- * Persistent cockpit chrome. Rendered once in the root layout — sidebar,
- * header strip, workspace ticker, bottom status bar, and all global overlays
- * stay mounted across route changes. Only the `<main>` slot (children) swaps.
+ * Persistent cockpit chrome — rendered once in the root layout.
+ * Sidebar, top bar, ticker, status bar and all global overlays stay
+ * mounted across route changes; only the main slot swaps.
  *
- * This is also where the websocket bridge mounts: a single connection serves
- * the entire app, multiplexed via the Zustand store.
+ * The websocket bridge mounts here exactly once — `useOnyxStream()` —
+ * so a single connection serves the whole app via the Zustand store.
  */
 export function CockpitShell({ children }: { children: ReactNode }) {
   useOnyxStream();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const blackout = useOnyx((s) => s.blackout);
   const cinema = useOnyx((s) => s.cinemaMode);
@@ -34,9 +34,17 @@ export function CockpitShell({ children }: { children: ReactNode }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === 'd' || e.key === 'D') {
-        fetch(`${ONYX_HTTP}/demo/run`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ scenario: 'cascade' }) }).catch(() => {});
+        fetch(`${ONYX_HTTP}/demo/run`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ scenario: 'cascade' }),
+        }).catch(() => {});
       } else if (e.key === 'b' || e.key === 'B') {
-        fetch(`${ONYX_HTTP}/blackout/simulate`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ enable: blackout.online }) }).catch(() => {});
+        fetch(`${ONYX_HTTP}/blackout/simulate`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ enable: blackout.online }),
+        }).catch(() => {});
       } else if (e.key === 'c' || e.key === 'C') {
         setCinema(!cinema);
       }
@@ -46,13 +54,16 @@ export function CockpitShell({ children }: { children: ReactNode }) {
   }, [blackout.online, cinema, setCinema]);
 
   return (
-    <div className="relative h-screen w-screen flex flex-row bg-onyx-950 text-onyx-100 overflow-hidden">
-      <Sidebar expanded={sidebarOpen} onToggle={() => setSidebarOpen((x) => !x)} />
+    <div className="relative h-screen w-screen flex flex-row surface-base text-primary overflow-hidden">
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed((x) => !x)}
+      />
 
       <section className="flex-1 min-w-0 flex flex-col">
         <HeaderStrip />
         <WorkspaceTicker />
-        <main className="flex-1 min-h-0 relative grid-bg overflow-hidden">
+        <main className="flex-1 min-h-0 relative overflow-hidden surface-base">
           {children}
         </main>
         <StatusBar />

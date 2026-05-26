@@ -1,14 +1,22 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Zap, Shield, Command, Film, Activity, Folder } from 'lucide-react';
+import {
+  Search, Zap, Shield, Film, Activity, Bell, ChevronDown, User, Wifi,
+} from 'lucide-react';
 import { useOnyx } from '@/lib/store';
-import { fmtClock, ONYX_HTTP } from '@/lib/format';
-import { Badge } from '@/components/ui/Badge';
+import { ONYX_HTTP } from '@/lib/format';
 import { Tooltip } from '@/components/ui/Tooltip';
-import { Separator } from '@/components/ui/Separator';
-import { FrameworkBadge } from '@/components/connector/FrameworkBadge';
 
+/**
+ * Topbar — minimal, calm, premium.
+ *
+ * Layout:
+ *  ┌─ workspace selector ─ search/command ─────────── status pills ─ actions ─ profile ─┐
+ *
+ * All status indicators (websocket, blackout, demo phase, BSI, clock) live
+ * inline on the right as small pills + the action buttons live alongside.
+ */
 export function HeaderStrip() {
   const session = useOnyx((s) => s.session);
   const connected = useOnyx((s) => s.connected);
@@ -18,115 +26,186 @@ export function HeaderStrip() {
   const cinema = useOnyx((s) => s.cinemaMode);
   const setCinema = useOnyx((s) => s.setCinema);
   const setCommandOpen = useOnyx((s) => s.setCommandOpen);
-  const [clock, setClock] = useState<number | null>(null);
+  const workspaces = useOnyx((s) => s.workspaces);
+  const activeId = useOnyx((s) => s.activeWorkspaceId);
+  const events = useOnyx((s) => s.events);
+  const active = workspaces.find((w) => w.id === activeId);
 
+  const [clock, setClock] = useState<number | null>(null);
   useEffect(() => {
     setClock(Date.now());
-    const id = setInterval(() => setClock(Date.now()), 137);
+    const id = setInterval(() => setClock(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
+  const stabBand = stability > 80 ? 'ok' : stability > 50 ? 'warn' : 'error';
+  const notifications = events.filter(
+    (e) => e.ts > Date.now() - 60_000 && ['BUILD_CRASH', 'COMPILER_FAILURE', 'DEPENDENCY_DEGRADED', 'LATENCY_SURGE', 'RULE_BREACH'].includes(e.kind),
+  ).length;
+
   const trigger = async () => {
     try {
-      await fetch(`${ONYX_HTTP}/demo/run`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ scenario: 'cascade' }) });
-    } catch { /* ignore */ }
+      await fetch(`${ONYX_HTTP}/demo/run`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ scenario: 'cascade' }),
+      });
+    } catch {/* ignore */}
   };
   const blackoutSim = async () => {
     try {
-      await fetch(`${ONYX_HTTP}/blackout/simulate`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ enable: blackout.online }) });
-    } catch { /* ignore */ }
+      await fetch(`${ONYX_HTTP}/blackout/simulate`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enable: blackout.online }),
+      });
+    } catch {/* ignore */}
   };
 
-  const stabBand = stability > 80 ? 'ok' : stability > 50 ? 'warn' : 'error';
-  const workspaces = useOnyx((s) => s.workspaces);
-  const activeId = useOnyx((s) => s.activeWorkspaceId);
-  const active = workspaces.find((w) => w.id === activeId);
-
   return (
-    <header className="relative h-12 flex items-center px-4 border-b border-onyx-600/40 bg-onyx-950/70 backdrop-blur z-20 gap-3">
-      <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
-
-      <div className="text-[12px] font-display tracking-[0.32em] glow-cyan select-none">EXECUTION INTELLIGENCE INFRASTRUCTURE</div>
-      <Separator orientation="vertical" className="h-5" />
-
-      <Tooltip label={active ? `Active workspace · ${active.path}` : 'No workspace attached — click to connect'}>
-        <Link href="/connect" className="flex items-center gap-1.5">
-          <Folder size={11} className={active ? 'text-cyan-glow' : 'text-signal-warn'} />
-          <Badge tone={active ? (active.status === 'demo' ? 'warn' : 'ok') : 'warn'}>
-            {active ? (active.name.length > 22 ? active.name.slice(0, 22) + '…' : active.name) : 'NO WORKSPACE'}
-          </Badge>
-          {active?.framework && <FrameworkBadge framework={active.framework} />}
-        </Link>
-      </Tooltip>
-      <Separator orientation="vertical" className="h-5" />
-
-      <Tooltip label="Agent WebSocket link">
-        <Badge tone={connected ? 'info' : 'error'} id="connected-pill">
-          <Activity size={10} /> {connected ? 'AGENT · LINKED' : 'AGENT · OFFLINE'}
-        </Badge>
-      </Tooltip>
-      <Tooltip label={blackout.online ? `Routing to ${blackout.provider}` : 'Blackout protocol active — local fallback'}>
-        <span id="blackout-pill">
-          <Badge tone={blackout.online ? 'info' : 'warn'}>
-            <Shield size={10} /> {blackout.online ? `INFER · ${blackout.provider.toUpperCase()}` : 'BLACKOUT · LOCAL'}
-          </Badge>
-        </span>
-      </Tooltip>
-      <Tooltip label="Active demo phase">
-        <Badge tone={demo.phase === 0 ? 'muted' : demo.phase === 2 ? 'error' : demo.phase === 3 ? 'info' : 'warn'}>
-          PHASE {demo.phase} · {demo.label}
-        </Badge>
-      </Tooltip>
-      {cinema && (
-        <Badge tone="info" className="animate-pulse-slow">
-          <Film size={10} /> CINEMA
-        </Badge>
-      )}
-
-      <div className="ml-auto flex items-center gap-3 relative">
-        <div className="text-[9.5px] tracking-[0.18em] uppercase text-onyx-300 hidden lg:block">
-          SESSION <span className="text-onyx-100">{session ?? '——'}</span>
+    <header className="relative h-14 flex items-center px-4 gap-3 border-b border-line bg-surface-raised z-20">
+      {/* Workspace selector */}
+      <Link
+        href="/connect"
+        className="flex items-center gap-2 px-2.5 py-1.5 rounded-md hover:bg-surface-sunken transition min-w-0 max-w-[260px]"
+      >
+        <div className="w-6 h-6 rounded-md surface-sunken flex items-center justify-center shrink-0">
+          <span className="text-[10px] font-semibold text-secondary">
+            {(active?.name ?? '··').slice(0, 2).toUpperCase()}
+          </span>
         </div>
-        <Tooltip label="Build Stability Index — 0..100 derived from 5 min of replay_events">
-          <span className="flex items-center gap-2">
-            <span className="panel-label">BSI</span>
-            <Badge tone={stabBand}>{String(stability).padStart(3, '0')}</Badge>
+        <div className="min-w-0 flex-1">
+          <div className="text-[12.5px] font-medium text-primary truncate leading-tight">
+            {active ? active.name : 'Select workspace'}
+          </div>
+          <div className="text-[10.5px] text-tertiary truncate leading-tight">
+            {active ? active.framework : 'No workspace attached'}
+          </div>
+        </div>
+        <ChevronDown size={13} className="text-tertiary shrink-0" />
+      </Link>
+
+      <div className="h-6 w-px bg-line" />
+
+      {/* Command/search */}
+      <button
+        onClick={() => setCommandOpen(true)}
+        className="flex items-center gap-2 px-3 h-9 rounded-md border border-line bg-surface-base hover:bg-surface-sunken transition min-w-[260px] max-w-[420px] flex-1"
+      >
+        <Search size={14} className="text-tertiary" />
+        <span className="text-[12.5px] text-tertiary flex-1 text-left truncate">
+          Search commands, queries, events…
+        </span>
+        <span className="kbd">⌘K</span>
+      </button>
+
+      {/* Right cluster */}
+      <div className="ml-auto flex items-center gap-2">
+        {/* Live status pills */}
+        <Tooltip label="Agent websocket link" side="bottom">
+          <span
+            id="connected-pill"
+            className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium ${
+              connected
+                ? 'text-[#047857] bg-[#ECFDF5] border border-[#A7F3D0] dark:text-emerald-200 dark:bg-emerald-400/10 dark:border-emerald-400/30'
+                : 'text-[#B91C1C] bg-[#FEF2F2] border border-[#FCA5A5] dark:text-red-200 dark:bg-red-400/10 dark:border-red-400/30'
+            }`}
+          >
+            <Wifi size={11} />
+            {connected ? 'Linked' : 'Offline'}
           </span>
         </Tooltip>
-        <div className="font-mono text-xs text-onyx-100 tracking-wider tabular-nums" suppressHydrationWarning>
-          {clock === null ? '——:——:——.———' : fmtClock(clock)}
-        </div>
-        <Separator orientation="vertical" className="h-5" />
-        <Tooltip label="Open command palette (⌘K / Ctrl+K)">
-          <button
-            onClick={() => setCommandOpen(true)}
-            className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] px-2.5 py-1 border border-onyx-600/60 text-onyx-100 hover:text-cyan-glow hover:border-cyan-glow/60 transition"
+
+        <Tooltip
+          label={
+            blackout.online
+              ? `Inference routing → ${blackout.provider}`
+              : 'Blackout active — local fallback'
+          }
+          side="bottom"
+        >
+          <span
+            id="blackout-pill"
+            className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium ${
+              blackout.online
+                ? 'text-secondary surface-sunken border border-line'
+                : 'text-[#B45309] bg-[#FFFBEB] border border-[#FCD34D] dark:text-amber-200 dark:bg-amber-400/10 dark:border-amber-400/30'
+            }`}
           >
-            <Command size={11} /> ⌘ K
+            <Shield size={11} />
+            {blackout.online ? blackout.provider : 'Local'}
+          </span>
+        </Tooltip>
+
+        {demo.phase > 0 && (
+          <Tooltip label="Active demo phase" side="bottom">
+            <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium text-[#4338CA] bg-[#EEF2FF] border border-[#C7D2FE] dark:text-indigo-200 dark:bg-indigo-400/10 dark:border-indigo-400/30">
+              <Activity size={11} />
+              Phase {demo.phase}
+            </span>
+          </Tooltip>
+        )}
+
+        <Tooltip label="Build Stability Index — last 5 min of replay_events" side="bottom">
+          <span
+            className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium ${
+              stabBand === 'ok'
+                ? 'text-[#047857] bg-[#ECFDF5] border border-[#A7F3D0] dark:text-emerald-200 dark:bg-emerald-400/10 dark:border-emerald-400/30'
+                : stabBand === 'warn'
+                  ? 'text-[#B45309] bg-[#FFFBEB] border border-[#FCD34D] dark:text-amber-200 dark:bg-amber-400/10 dark:border-amber-400/30'
+                  : 'text-[#B91C1C] bg-[#FEF2F2] border border-[#FCA5A5] dark:text-red-200 dark:bg-red-400/10 dark:border-red-400/30'
+            }`}
+          >
+            <span className="text-[10.5px] font-semibold tracking-wide uppercase opacity-70">BSI</span>
+            <span className="tabular-nums">{stability}</span>
+          </span>
+        </Tooltip>
+
+        <span className="hidden xl:inline text-[11.5px] text-tertiary tabular-nums" suppressHydrationWarning>
+          {clock === null ? '—:—:—' : new Date(clock).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+        </span>
+
+        <div className="h-6 w-px bg-line" />
+
+        {/* Actions */}
+        <Tooltip label="Run cinematic demo (D)" side="bottom">
+          <button onClick={trigger} className="btn btn-accent h-8 px-3">
+            <Zap size={13} />
+            <span className="text-[12.5px]">Run demo</span>
           </button>
         </Tooltip>
-        <Tooltip label="Run cinematic 4-phase demo (D)">
-          <button
-            onClick={trigger}
-            className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] px-3 py-1 border border-cyan-glow/60 text-cyan-glow hover:bg-cyan-glow/10 transition shadow-cyan-glow"
-          >
-            <Zap size={11} /> Run Demo
+        <Tooltip label="Simulate blackout protocol (B)" side="bottom">
+          <button onClick={blackoutSim} className="btn btn-outline h-8 px-3">
+            <Shield size={13} />
+            <span className="text-[12.5px]">{blackout.online ? 'Blackout' : 'Restore'}</span>
           </button>
         </Tooltip>
-        <Tooltip label="Simulate blackout protocol (B)">
-          <button
-            onClick={blackoutSim}
-            className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] px-3 py-1 border border-violet-glow/60 text-violet-glow hover:bg-violet-glow/10 transition"
-          >
-            <Shield size={11} /> {blackout.online ? 'Blackout' : 'Restore'}
-          </button>
-        </Tooltip>
-        <Tooltip label="Toggle cinema mode (C)">
+        <Tooltip label="Toggle cinema mode (C)" side="bottom">
           <button
             onClick={() => setCinema(!cinema)}
-            className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] px-2.5 py-1 border border-onyx-600/60 text-onyx-100 hover:text-violet-glow hover:border-violet-glow/60 transition"
+            className={`btn-icon ${cinema ? 'text-[#7C3AED]' : ''}`}
+            aria-label="cinema"
           >
-            <Film size={11} /> {cinema ? 'Exit' : 'Cinema'}
+            <Film size={14} />
+          </button>
+        </Tooltip>
+
+        {/* Notifications */}
+        <Tooltip label="Recent critical events" side="bottom">
+          <button className="btn-icon relative" aria-label="notifications">
+            <Bell size={14} />
+            {notifications > 0 && (
+              <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-1 rounded-full bg-[#EF4444] text-white text-[9.5px] font-semibold flex items-center justify-center">
+                {notifications > 9 ? '9+' : notifications}
+              </span>
+            )}
+          </button>
+        </Tooltip>
+
+        {/* Profile */}
+        <Tooltip label={`Session · ${session ?? '—'}`} side="bottom">
+          <button className="w-8 h-8 rounded-full bg-surface-sunken hover:bg-surface-inset transition flex items-center justify-center" aria-label="profile">
+            <User size={14} className="text-secondary" />
           </button>
         </Tooltip>
       </div>

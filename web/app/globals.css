@@ -2,397 +2,735 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+ * ONYX · Design System
+ * Premium, calm operational intelligence aesthetic.
+ * Inspired by Linear / Vercel / Stripe / Kimia / Arc.
+ * ============================================================ */
+
 :root {
+  color-scheme: light;
+
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-sans: var(--font-sans-stack, 'Inter'), system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: var(--font-sans-stack, 'Inter'), system-ui, sans-serif;
+
+  /* Surface ramp */
+  --bg:            #F7F8FA;
+  --surface:       #FFFFFF;
+  --surface-raised:#FFFFFF;
+  --surface-sunken:#F1F3F7;
+  --surface-inset: #FAFBFD;
+
+  /* Text */
+  --text-primary:  #111827;
+  --text-secondary:#6B7280;
+  --text-tertiary: #9CA3AF;
+  --text-quiet:    #B7BEC9;
+
+  /* Borders */
+  --border-subtle:  #EEF0F4;
+  --border:         #E7EAF0;
+  --border-strong:  #D9DEE6;
+
+  /* Accents */
+  --brand-violet:  #7C3AED;
+  --brand-indigo:  #4F46E5;
+  --brand-blue:    #3B82F6;
+
+  --signal-info:     #4F46E5;
+  --signal-warn:     #F59E0B;
+  --signal-error:    #EF4444;
+  --signal-critical: #DC2626;
+  --signal-ok:       #10B981;
+
+  /* Layered shadow recipe */
+  --shadow-xs: 0 1px 2px rgba(17, 24, 39, 0.04);
+  --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.04), 0 1px 0 rgba(17, 24, 39, 0.02);
+  --shadow-md: 0 1px 2px rgba(17, 24, 39, 0.04), 0 4px 12px rgba(17, 24, 39, 0.06);
+  --shadow-lg: 0 1px 2px rgba(17, 24, 39, 0.04), 0 12px 32px -12px rgba(17, 24, 39, 0.12);
+
+  /* Grid (faint) */
+  --grid: rgba(17, 24, 39, 0.04);
+  --grid-strong: rgba(17, 24, 39, 0.06);
+}
+
+.dark {
   color-scheme: dark;
-  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
-  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
-  --grid: rgba(80, 101, 131, 0.08);
-  --grid-strong: rgba(80, 101, 131, 0.16);
-  --scan: rgba(34, 232, 255, 0.04);
+
+  --bg:            #0B0D12;
+  --surface:       #11141B;
+  --surface-raised:#151923;
+  --surface-sunken:#0E1117;
+  --surface-inset: #161A22;
+
+  --text-primary:  #ECEFF4;
+  --text-secondary:#9CA3AF;
+  --text-tertiary: #6B7280;
+  --text-quiet:    #4B5563;
+
+  --border-subtle:  #1A1E27;
+  --border:         #232936;
+  --border-strong:  #2D3444;
+
+  --brand-violet:  #A78BFA;
+  --brand-indigo:  #818CF8;
+  --brand-blue:    #60A5FA;
+
+  --signal-info:     #818CF8;
+  --signal-warn:     #FBBF24;
+  --signal-error:    #F87171;
+  --signal-critical: #EF4444;
+  --signal-ok:       #34D399;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+  --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 1px 2px rgba(0, 0, 0, 0.4), 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+
+  --grid: rgba(255, 255, 255, 0.04);
+  --grid-strong: rgba(255, 255, 255, 0.07);
+}
+
+* {
+  border-color: var(--border);
 }
 
 html, body {
   height: 100%;
-  background: #040608;
-  color: #c9d5e3;
-  font-family: var(--font-mono);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
   font-feature-settings: "ss01", "cv11", "tnum";
-  letter-spacing: 0.01em;
+  letter-spacing: -0.005em;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background-image:
-    radial-gradient(circle at 18% 12%, rgba(34, 232, 255, 0.05), transparent 55%),
-    radial-gradient(circle at 82% 88%, rgba(155, 108, 255, 0.05), transparent 55%),
-    linear-gradient(180deg, #040608 0%, #06090d 100%);
+  background:
+    radial-gradient(80% 50% at 50% -10%, rgba(124, 58, 237, 0.04), transparent 60%),
+    radial-gradient(60% 40% at 100% 100%, rgba(79, 70, 229, 0.03), transparent 60%),
+    var(--bg);
 }
 
-/* fine cybernetic grid */
+.dark body {
+  background:
+    radial-gradient(80% 50% at 50% -10%, rgba(124, 58, 237, 0.07), transparent 60%),
+    radial-gradient(60% 40% at 100% 100%, rgba(79, 70, 229, 0.05), transparent 60%),
+    var(--bg);
+}
+
+/* ─────────────────────────────────────────────────────
+ * Faint background grid (now whisper-soft, not chunky)
+ * ───────────────────────────────────────────────────── */
 .grid-bg {
   background-image:
     linear-gradient(var(--grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 56px 56px;
+  background-size: 80px 80px;
 }
 .grid-bg-strong {
   background-image:
     linear-gradient(var(--grid-strong) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-strong) 1px, transparent 1px);
-  background-size: 28px 28px;
+  background-size: 40px 40px;
 }
 
-/* scanline overlay */
-.scanlines {
-  position: relative;
-}
-.scanlines::after {
-  content: '';
-  position: absolute; inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 2px,
-    var(--scan) 3px,
-    transparent 4px
-  );
-  mix-blend-mode: screen;
-}
+/* Scanlines — neutralised. Cyberpunk effect is gone, but the class
+ * remains as a no-op so existing markup doesn't break. */
+.scanlines { position: relative; }
+.scanlines::after { content: none; }
 
-/* glow text */
-.glow-cyan   { text-shadow: 0 0 8px rgba(34, 232, 255, 0.6); }
-.glow-violet { text-shadow: 0 0 8px rgba(155, 108, 255, 0.6); }
-.glow-err    { text-shadow: 0 0 8px rgba(255, 45, 107, 0.6); }
-.glow-warn   { text-shadow: 0 0 8px rgba(255, 184, 74, 0.6); }
-.glow-ok     { text-shadow: 0 0 8px rgba(70, 245, 184, 0.6); }
+/* ─────────────────────────────────────────────────────
+ * Glow text utilities — now subtle accent colours, no glow.
+ * ───────────────────────────────────────────────────── */
+.glow-cyan,
+.glow-violet { color: inherit; text-shadow: none; }
+.glow-cyan   { color: var(--brand-indigo); }
+.glow-violet { color: var(--brand-violet); }
+.glow-err    { color: var(--signal-error); }
+.glow-warn   { color: var(--signal-warn); }
+.glow-ok     { color: var(--signal-ok); }
 
-/* panel chrome */
+/* ─────────────────────────────────────────────────────
+ * Panel — clean, premium card
+ * ───────────────────────────────────────────────────── */
 .panel {
-  background: linear-gradient(180deg, rgba(10,14,20,0.85), rgba(7,10,14,0.85));
-  border: 1px solid rgba(80, 101, 131, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(80,101,131,0.10), 0 8px 24px -12px rgba(0,0,0,0.6);
-  border-radius: 4px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
+  transition: box-shadow 200ms ease, border-color 200ms ease;
 }
-.panel::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(34, 232, 255, 0.04) 0%, transparent 38%);
-  pointer-events: none;
+.panel:hover {
+  box-shadow: var(--shadow-md);
 }
+.panel::before { content: none; }
+
 .panel-label {
-  font-size: 9.5px;
-  letter-spacing: 0.22em;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--text-secondary);
+}
+
+/* Section eyebrow — small uppercase label */
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(201, 213, 227, 0.55);
+  color: var(--text-tertiary);
 }
 
-/* scrollbars */
-::-webkit-scrollbar {
-  width: 6px; height: 6px;
-}
+/* Tabular numerics for metric values */
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* ─────────────────────────────────────────────────────
+ * Scrollbars — minimal
+ * ───────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(80, 101, 131, 0.4); border-radius: 3px; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); background-clip: padding-box; border: 3px solid transparent; }
 
-/* signal pill */
+/* ─────────────────────────────────────────────────────
+ * Signal pills — clean, soft, semantic
+ * ───────────────────────────────────────────────────── */
 .pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 2px 8px;
-  border-radius: 2px;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 18px;
+  font-family: var(--font-sans);
 }
 .pill .dot {
   width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  box-shadow: none;
 }
-.pill.info     { color: #22e8ff; border: 1px solid rgba(34,232,255,0.5);   background: rgba(34,232,255,0.06); }
-.pill.warn     { color: #ffb84a; border: 1px solid rgba(255,184,74,0.55);  background: rgba(255,184,74,0.06); }
-.pill.error    { color: #ff5d6f; border: 1px solid rgba(255,93,111,0.55);  background: rgba(255,93,111,0.06); }
-.pill.critical { color: #ff2d6b; border: 1px solid rgba(255,45,107,0.7);   background: rgba(255,45,107,0.08); animation: pulseGlow 1.8s ease-in-out infinite; }
-.pill.ok       { color: #46f5b8; border: 1px solid rgba(70,245,184,0.55);  background: rgba(70,245,184,0.06); }
-.pill .dot     { box-shadow: 0 0 8px currentColor; background: currentColor; }
+.pill.info     { color: var(--brand-indigo);   background: rgba(79, 70, 229, 0.08);  border: 1px solid rgba(79, 70, 229, 0.18); }
+.pill.warn     { color: #B45309;               background: rgba(245, 158, 11, 0.10); border: 1px solid rgba(245, 158, 11, 0.22); }
+.pill.error    { color: #B91C1C;               background: rgba(239, 68, 68, 0.10);  border: 1px solid rgba(239, 68, 68, 0.20); }
+.pill.critical { color: #991B1B;               background: rgba(220, 38, 38, 0.10);  border: 1px solid rgba(220, 38, 38, 0.24); animation: pulseSoft 2.4s ease-in-out infinite; }
+.pill.ok       { color: #047857;               background: rgba(16, 185, 129, 0.10); border: 1px solid rgba(16, 185, 129, 0.22); }
 
-@keyframes pulseGlow {
-  0%,100% { opacity: 0.5; }
+.dark .pill.info     { color: #C7D2FE; background: rgba(99, 102, 241, 0.15);  border-color: rgba(99, 102, 241, 0.30); }
+.dark .pill.warn     { color: #FCD34D; background: rgba(245, 158, 11, 0.15);  border-color: rgba(245, 158, 11, 0.30); }
+.dark .pill.error    { color: #FCA5A5; background: rgba(239, 68, 68, 0.15);   border-color: rgba(239, 68, 68, 0.30); }
+.dark .pill.critical { color: #FCA5A5; background: rgba(220, 38, 38, 0.18);   border-color: rgba(220, 38, 38, 0.35); }
+.dark .pill.ok       { color: #6EE7B7; background: rgba(16, 185, 129, 0.15);  border-color: rgba(16, 185, 129, 0.30); }
+
+@keyframes pulseSoft {
+  0%,100% { opacity: 0.7; }
   50%     { opacity: 1; }
 }
 
-/* corner brackets — used on every panel */
+/* ─────────────────────────────────────────────────────
+ * Corner brackets — neutralised to a no-op.
+ * The classes remain so existing JSX doesn't error, but they
+ * render nothing so panels stay clean.
+ * ───────────────────────────────────────────────────── */
 .bracket-top-l, .bracket-top-r, .bracket-bot-l, .bracket-bot-r {
-  position: absolute; width: 10px; height: 10px;
-  border-color: rgba(34, 232, 255, 0.55);
-  pointer-events: none;
+  display: none;
 }
-.bracket-top-l { top: 4px; left: 4px;  border-top: 1px solid; border-left: 1px solid; }
-.bracket-top-r { top: 4px; right: 4px; border-top: 1px solid; border-right: 1px solid; }
-.bracket-bot-l { bottom: 4px; left: 4px;  border-bottom: 1px solid; border-left: 1px solid; }
-.bracket-bot-r { bottom: 4px; right: 4px; border-bottom: 1px solid; border-right: 1px solid; }
 
-/* horizontal divider line with center label */
+/* ─────────────────────────────────────────────────────
+ * HR with center label
+ * ───────────────────────────────────────────────────── */
 .hr-label {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
-  color: rgba(201, 213, 227, 0.45);
+  display: flex; align-items: center; gap: 12px;
+  font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-tertiary);
 }
 .hr-label::before, .hr-label::after {
   content: ''; flex: 1; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(80,101,131,0.4), transparent);
+  background: var(--border);
 }
 
+/* ─────────────────────────────────────────────────────
+ * Ticker (workspace activity strip)
+ * ───────────────────────────────────────────────────── */
 .ticker {
   white-space: nowrap;
   overflow: hidden;
 }
 .ticker > .ticker-inner {
   display: inline-block;
-  animation: tickerLoop 60s linear infinite;
+  animation: tickerLoop 80s linear infinite;
 }
 @keyframes tickerLoop {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
 
-/* ============================================================
- * Cinematic overlays and focus utilities
- * ============================================================ */
-
-/* Focus aura — applied to a panel when its sidebar item is hovered.
- * Casts a cyan outline + halo without affecting layout. */
+/* ─────────────────────────────────────────────────────
+ * Focus / spotlight / dim utilities
+ * ───────────────────────────────────────────────────── */
 .focus-aura {
   box-shadow:
-    0 0 0 1px rgba(34, 232, 255, 0.45),
-    0 0 32px rgba(34, 232, 255, 0.18) inset,
-    0 0 24px rgba(34, 232, 255, 0.18);
+    0 0 0 2px rgba(79, 70, 229, 0.18),
+    var(--shadow-md);
   transition: box-shadow 220ms ease;
 }
-
-/* Dim — for panels deprioritised during a cinematic mode (replay, blackout). */
 .dim-out {
-  filter: saturate(0.5) brightness(0.55);
-  opacity: 0.65;
-  transition: filter 360ms ease, opacity 360ms ease;
+  opacity: 0.5;
+  filter: saturate(0.7);
+  transition: opacity 360ms ease, filter 360ms ease;
 }
-
-/* Spotlight — the inverse: brighten + lift for the active stage. */
 .spotlight {
-  filter: brightness(1.07) saturate(1.1);
   box-shadow:
-    0 0 0 1px rgba(34, 232, 255, 0.5),
-    0 0 60px rgba(34, 232, 255, 0.18);
-  transition: filter 360ms ease, box-shadow 360ms ease;
+    0 0 0 1px rgba(79, 70, 229, 0.3),
+    0 12px 36px -12px rgba(79, 70, 229, 0.25);
+  transition: box-shadow 360ms ease;
 }
 
-/* Blackout vignette — full-screen tactical alert overlay. */
+/* ─────────────────────────────────────────────────────
+ * Blackout overlay — controlled, calm emergency mode.
+ * No flashing siren. A soft amber wash that says
+ * "we are operating in autonomous mode" without panic.
+ * ───────────────────────────────────────────────────── */
 .blackout-vignette {
   position: fixed; inset: 0; pointer-events: none; z-index: 50;
   background:
-    radial-gradient(circle at 50% 30%, rgba(255, 45, 107, 0.10), transparent 55%),
-    radial-gradient(circle at 50% 90%, rgba(255, 45, 107, 0.16), transparent 60%),
-    linear-gradient(180deg, transparent 0, rgba(255, 45, 107, 0.04) 50%, transparent 100%);
-  animation: blackoutBreath 2.4s ease-in-out infinite;
+    radial-gradient(120% 60% at 50% 0%, rgba(245, 158, 11, 0.10), transparent 55%),
+    radial-gradient(120% 60% at 50% 100%, rgba(245, 158, 11, 0.06), transparent 55%);
 }
-@keyframes blackoutBreath {
-  0%,100% { opacity: 0.55; }
-  50%     { opacity: 1; }
-}
-
-/* Replay cinema vignette — violet/cyan film grain. */
-.replay-vignette {
-  position: fixed; inset: 0; pointer-events: none; z-index: 40;
+.dark .blackout-vignette {
   background:
-    radial-gradient(circle at center, transparent 30%, rgba(4, 6, 8, 0.55) 90%),
-    repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(155, 108, 255, 0.05) 4px);
-  mix-blend-mode: screen;
+    radial-gradient(120% 60% at 50% 0%, rgba(245, 158, 11, 0.14), transparent 55%),
+    radial-gradient(120% 60% at 50% 100%, rgba(245, 158, 11, 0.10), transparent 55%);
 }
 
-/* Subtle siren strip animation along the top edge during blackout. */
 .siren-strip {
   position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(255, 45, 107, 0.9), transparent);
+  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.55), transparent);
   background-size: 200% 100%;
-  animation: sirenSlide 1.6s linear infinite;
+  animation: sirenSlide 4s linear infinite;
 }
 @keyframes sirenSlide {
   0%   { background-position: -100% 0; }
   100% { background-position: 100% 0; }
 }
 
-/* Marquee-style emergency banner. */
 .emergency-banner {
-  font-family: var(--font-mono);
-  letter-spacing: 0.36em;
-  text-transform: uppercase;
-  color: #ff2d6b;
-  text-shadow:
-    0 0 6px rgba(255, 45, 107, 0.8),
-    0 0 18px rgba(255, 45, 107, 0.45);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  color: #B45309;
+  text-shadow: none;
+}
+.dark .emergency-banner { color: #FCD34D; }
+
+/* ─────────────────────────────────────────────────────
+ * Replay cinema vignette — subtle violet wash
+ * ───────────────────────────────────────────────────── */
+.replay-vignette {
+  position: fixed; inset: 0; pointer-events: none; z-index: 40;
+  background:
+    radial-gradient(80% 60% at 50% 0%, rgba(124, 58, 237, 0.06), transparent 60%),
+    radial-gradient(60% 40% at 50% 100%, rgba(124, 58, 237, 0.04), transparent 60%);
+}
+.dark .replay-vignette {
+  background:
+    radial-gradient(80% 60% at 50% 0%, rgba(167, 139, 250, 0.10), transparent 60%),
+    radial-gradient(60% 40% at 50% 100%, rgba(167, 139, 250, 0.07), transparent 60%);
 }
 
-/* Sidebar rail hover glow */
+/* ─────────────────────────────────────────────────────
+ * Sidebar rail — clean, calm, modern
+ * ───────────────────────────────────────────────────── */
 .rail-item {
   position: relative;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 10px 0;
-  border-left: 2px solid transparent;
-  color: rgba(201, 213, 227, 0.5);
-  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin: 1px 8px;
+  border-radius: 8px;
+  border-left: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  transition: background 140ms ease, color 140ms ease;
 }
 .rail-item:hover {
-  color: #22e8ff;
-  background: rgba(34, 232, 255, 0.05);
-  border-left-color: rgba(34, 232, 255, 0.55);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
 }
 .rail-item.active {
-  color: #22e8ff;
-  background: rgba(34, 232, 255, 0.08);
-  border-left-color: #22e8ff;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  font-weight: 600;
+}
+.dark .rail-item.active {
+  background: rgba(255, 255, 255, 0.05);
 }
 .rail-item .activity-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  position: absolute; top: 6px; right: 8px;
-  background: #22e8ff; box-shadow: 0 0 6px #22e8ff;
-  animation: dotPulse 1.6s ease-in-out infinite;
+  width: 6px; height: 6px; border-radius: 50%;
+  position: absolute; top: 50%; right: 12px; transform: translateY(-50%);
+  background: var(--brand-indigo);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  animation: dotPulse 2.4s ease-in-out infinite;
 }
 @keyframes dotPulse {
-  0%,100% { opacity: 0.4; transform: scale(1); }
-  50%     { opacity: 1;   transform: scale(1.25); }
+  0%,100% { opacity: 0.7; }
+  50%     { opacity: 1; }
 }
 
-/* Status bar pulse glyph */
+/* Active-route indicator bar (rendered by Sidebar) */
+.rail-item.active::before {
+  content: '';
+  position: absolute;
+  left: -8px; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 16px;
+  border-radius: 0 3px 3px 0;
+  background: var(--brand-indigo);
+}
+
+/* ─────────────────────────────────────────────────────
+ * Heartbeat / live indicator
+ * ───────────────────────────────────────────────────── */
 .heartbeat {
   width: 8px; height: 8px; border-radius: 50%;
-  background: #46f5b8; box-shadow: 0 0 10px #46f5b8;
-  animation: heartbeat 1.4s ease-in-out infinite;
+  background: var(--signal-ok);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+  animation: heartbeat 2.2s ease-in-out infinite;
 }
 @keyframes heartbeat {
-  0%,100% { transform: scale(0.7); opacity: 0.5; }
-  35%     { transform: scale(1.4); opacity: 1; }
-  60%     { transform: scale(0.9); opacity: 0.8; }
+  0%,100% { transform: scale(0.9); opacity: 0.85; }
+  50%     { transform: scale(1.0); opacity: 1; box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.10); }
 }
 
-/* Resizable splitter handle */
+/* ─────────────────────────────────────────────────────
+ * Resize splitter
+ * ───────────────────────────────────────────────────── */
 .resize-handle {
   position: relative;
-  width: 6px; cursor: col-resize;
+  width: 8px; cursor: col-resize;
   background: transparent;
   flex-shrink: 0;
   transition: background 160ms ease;
 }
 .resize-handle::before {
   content: ''; position: absolute; left: 50%; top: 50%;
-  width: 1px; height: 36px; transform: translate(-50%, -50%);
-  background: rgba(80, 101, 131, 0.4);
+  width: 1px; height: 28px; transform: translate(-50%, -50%);
+  background: var(--border);
 }
-.resize-handle:hover { background: rgba(34, 232, 255, 0.06); }
-.resize-handle:hover::before { background: rgba(34, 232, 255, 0.8); box-shadow: 0 0 8px rgba(34,232,255,0.7); }
-.resize-handle.row { width: 100%; height: 6px; cursor: row-resize; }
-.resize-handle.row::before { width: 36px; height: 1px; }
+.resize-handle:hover { background: rgba(79, 70, 229, 0.06); }
+.resize-handle:hover::before { background: var(--brand-indigo); }
+.resize-handle.row { width: 100%; height: 8px; cursor: row-resize; }
+.resize-handle.row::before { width: 28px; height: 1px; }
 
-/* shadcn-style tooltip */
+/* ─────────────────────────────────────────────────────
+ * Tooltip
+ * ───────────────────────────────────────────────────── */
 .tooltip-content {
-  background: rgba(7, 10, 14, 0.96);
-  border: 1px solid rgba(34, 232, 255, 0.35);
-  box-shadow: 0 0 16px rgba(34, 232, 255, 0.25), 0 0 0 1px rgba(34,232,255,0.15) inset;
-  color: #c9d5e3;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  padding: 6px 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  border-radius: 2px;
+  background: var(--ink-900, #0B0F1A);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-md);
+  color: #F9FAFB;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  letter-spacing: -0.005em;
+  text-transform: none;
+  border-radius: 6px;
   z-index: 70;
 }
+.dark .tooltip-content {
+  background: #E7EAF0;
+  color: #111827;
+  border-color: #FFFFFF;
+}
 
-/* Command palette */
+/* ─────────────────────────────────────────────────────
+ * Command palette (cmdk)
+ * ───────────────────────────────────────────────────── */
 [cmdk-root] {
-  background: rgba(4, 6, 8, 0.97);
-  border: 1px solid rgba(34, 232, 255, 0.35);
-  box-shadow: 0 24px 60px -10px rgba(0,0,0,0.7), 0 0 24px rgba(34, 232, 255, 0.18);
-  font-family: var(--font-mono);
-  color: #c9d5e3;
-  border-radius: 2px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  border-radius: 12px;
+  overflow: hidden;
 }
 [cmdk-input] {
   background: transparent;
   border: 0;
   outline: 0;
   width: 100%;
-  padding: 14px 16px;
-  font-size: 13px;
-  letter-spacing: 0.12em;
-  color: #22e8ff;
-  border-bottom: 1px solid rgba(80, 101, 131, 0.3);
+  padding: 16px 18px;
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
 }
-[cmdk-input]::placeholder { color: rgba(201, 213, 227, 0.4); }
-[cmdk-list] { max-height: 360px; overflow: auto; padding: 8px 0; }
+[cmdk-input]::placeholder { color: var(--text-tertiary); }
+[cmdk-list] { max-height: 400px; overflow: auto; padding: 8px; }
 [cmdk-group-heading] {
-  font-size: 9px;
-  letter-spacing: 0.22em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: rgba(201, 213, 227, 0.5);
-  padding: 8px 14px 4px;
+  color: var(--text-tertiary);
+  padding: 12px 12px 6px;
 }
 [cmdk-item] {
   display: flex; align-items: center; gap: 10px;
-  padding: 8px 14px;
-  font-size: 11.5px;
+  padding: 9px 12px;
+  font-size: 13px;
   cursor: pointer;
-  border-left: 2px solid transparent;
+  border-radius: 6px;
+  color: var(--text-primary);
 }
 [cmdk-item][data-selected='true'] {
-  background: rgba(34, 232, 255, 0.08);
-  border-left-color: #22e8ff;
-  color: #22e8ff;
+  background: var(--surface-sunken);
+  color: var(--text-primary);
 }
-[cmdk-empty] { padding: 16px; font-size: 11px; color: rgba(201, 213, 227, 0.45); text-align: center; }
-[cmdk-shortcut] { margin-left: auto; font-size: 10px; color: rgba(201, 213, 227, 0.5); }
+.dark [cmdk-item][data-selected='true'] {
+  background: rgba(255, 255, 255, 0.06);
+}
+[cmdk-empty] { padding: 24px; font-size: 13px; color: var(--text-tertiary); text-align: center; }
+[cmdk-shortcut] {
+  margin-left: auto;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-sunken);
+}
 
-/* Sonner toast theme */
+/* ─────────────────────────────────────────────────────
+ * Sonner toast theme
+ * ───────────────────────────────────────────────────── */
 [data-sonner-toaster] {
-  --normal-bg: rgba(7, 10, 14, 0.96);
-  --normal-border: rgba(34, 232, 255, 0.35);
-  --normal-text: #c9d5e3;
-  font-family: var(--font-mono) !important;
+  --normal-bg: var(--surface-raised);
+  --normal-border: var(--border);
+  --normal-text: var(--text-primary);
+  font-family: var(--font-sans) !important;
 }
 [data-sonner-toast] {
   background: var(--normal-bg) !important;
   border: 1px solid var(--normal-border) !important;
-  box-shadow: 0 8px 22px -10px rgba(0,0,0,0.7), 0 0 14px rgba(34,232,255,0.18) !important;
-  border-radius: 2px !important;
+  box-shadow: var(--shadow-lg) !important;
+  border-radius: 10px !important;
   color: var(--normal-text) !important;
-  font-size: 11.5px !important;
-  letter-spacing: 0.04em !important;
+  font-size: 13px !important;
+  letter-spacing: -0.005em !important;
 }
-[data-sonner-toast][data-type='error']    { border-color: rgba(255, 93, 111, 0.55) !important; box-shadow: 0 0 18px rgba(255, 45, 107, 0.25) !important; }
-[data-sonner-toast][data-type='warning']  { border-color: rgba(255, 184, 74, 0.55) !important; }
-[data-sonner-toast][data-type='success']  { border-color: rgba(70, 245, 184, 0.55) !important; }
+[data-sonner-toast][data-type='error']   { border-color: rgba(239, 68, 68, 0.30) !important; }
+[data-sonner-toast][data-type='warning'] { border-color: rgba(245, 158, 11, 0.32) !important; }
+[data-sonner-toast][data-type='success'] { border-color: rgba(16, 185, 129, 0.30) !important; }
 
-/* "tactical" frame around the topology stage when in replay */
+/* ─────────────────────────────────────────────────────
+ * Tactical frame (replay)
+ * ───────────────────────────────────────────────────── */
 .tactical-frame {
   position: relative;
-  outline: 1px solid rgba(155, 108, 255, 0.45);
+  outline: 1px solid rgba(124, 58, 237, 0.28);
   outline-offset: -4px;
-  box-shadow: inset 0 0 60px rgba(155, 108, 255, 0.12);
+  box-shadow: inset 0 0 60px rgba(124, 58, 237, 0.04);
+  border-radius: 12px;
   transition: outline-color 280ms ease;
 }
 
-/* Skeleton shimmer */
+/* ─────────────────────────────────────────────────────
+ * Skeleton shimmer
+ * ───────────────────────────────────────────────────── */
 .skeleton-shimmer {
   position: relative; overflow: hidden;
-  background: rgba(34, 232, 255, 0.04);
+  background: var(--surface-sunken);
+  border-radius: 6px;
 }
 .skeleton-shimmer::after {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(34, 232, 255, 0.15), transparent);
+  background: linear-gradient(90deg, transparent, rgba(17, 24, 39, 0.05), transparent);
   animation: shimmer 1.6s linear infinite;
+}
+.dark .skeleton-shimmer::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
 }
 @keyframes shimmer {
   from { transform: translateX(-100%); }
   to   { transform: translateX(100%); }
 }
+
+/* ─────────────────────────────────────────────────────
+ * Button primitives — clean, minimal
+ * ───────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  line-height: 18px;
+}
+.btn:focus-visible { outline: 0; box-shadow: var(--shadow-focus, 0 0 0 3px rgba(79,70,229,0.18)); }
+
+.btn-primary {
+  background: #111827;
+  color: #FFFFFF;
+  border-color: #111827;
+}
+.btn-primary:hover { background: #1F2937; border-color: #1F2937; }
+.dark .btn-primary { background: #FFFFFF; color: #111827; border-color: #FFFFFF; }
+.dark .btn-primary:hover { background: #E5E7EB; border-color: #E5E7EB; }
+
+.btn-accent {
+  background: var(--brand-indigo);
+  color: #FFFFFF;
+  border-color: var(--brand-indigo);
+}
+.btn-accent:hover { background: #4338CA; border-color: #4338CA; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+.btn-ghost:hover {
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.btn-outline {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+.btn-outline:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-inset);
+}
+
+/* Compact icon button */
+.btn-icon {
+  width: 30px; height: 30px;
+  padding: 0;
+  border-radius: 7px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+  cursor: pointer;
+}
+.btn-icon:hover {
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+/* Keyboard shortcut chip */
+.kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 1px 5px;
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  line-height: 16px;
+}
+
+/* ─────────────────────────────────────────────────────
+ * Subtle divider line common across panels
+ * ───────────────────────────────────────────────────── */
+.hairline { background: var(--border); height: 1px; width: 100%; }
+
+/* In-card "see more" link row */
+.link-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--brand-indigo);
+  text-decoration: none;
+  transition: color 140ms ease;
+}
+.link-row:hover {
+  color: #3730A3;
+}
+.dark .link-row { color: #A5B4FC; }
+.dark .link-row:hover { color: #C7D2FE; }
+
+/* ─────────────────────────────────────────────────────
+ * Number / metric styles
+ * ───────────────────────────────────────────────────── */
+.metric-xl {
+  font-family: var(--font-sans);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.metric-lg {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.metric-md {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────────────────────────────────────────
+ * Surface helpers used in pages
+ * ───────────────────────────────────────────────────── */
+.surface-base   { background: var(--bg); }
+.surface-raised { background: var(--surface-raised); }
+.surface-sunken { background: var(--surface-sunken); }
+.surface-inset  { background: var(--surface-inset); }
+
+.text-primary   { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary  { color: var(--text-tertiary); }
+.text-quiet     { color: var(--text-quiet); }
+
+.border-line    { border-color: var(--border); }
+.border-subtle  { border-color: var(--border-subtle); }
+.border-strong  { border-color: var(--border-strong); }

@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useOnyx } from '@/lib/store';
 import { Panel } from '@/components/primitives/Panel';
-import { SignalPill } from '@/components/primitives/SignalPill';
+import { Badge } from '@/components/ui/Badge';
 import { fmtShortTs, ONYX_HTTP } from '@/lib/format';
 
 export function AnalystTicker() {
@@ -11,8 +11,6 @@ export function AnalystTicker() {
   const blackout = useOnyx((s) => s.blackout);
   const lastTrigger = useRef<number>(0);
 
-  // Periodically prompt the analyst with the freshest intelligence summary
-  // so the ticker stays alive. Throttled — never more than once per 30s.
   useEffect(() => {
     const id = setInterval(async () => {
       if (intel.length === 0) return;
@@ -26,7 +24,9 @@ export function AnalystTicker() {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ prompt }),
         });
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }, 8000);
     return () => clearInterval(id);
   }, [intel]);
@@ -35,25 +35,44 @@ export function AnalystTicker() {
 
   return (
     <Panel
-      title="ANALYST · ARCHITECTURAL INSIGHTS"
-      right={`PROVIDER · ${blackout.provider.toUpperCase()}`}
-      badge={<SignalPill severity={blackout.online ? 'info' : 'warn'} label={blackout.online ? 'LINKED' : 'BLACKOUT'} />}
+      title="Analyst · architectural insights"
+      right={`Provider · ${blackout.provider}`}
+      badge={
+        <Badge tone={blackout.online ? 'info' : 'warn'}>
+          {blackout.online ? 'Linked' : 'Blackout'}
+        </Badge>
+      }
       className="h-full"
       inner="p-0"
       scroll
     >
-      <div className="font-mono text-[11px]">
+      <div>
         {reversed.map((a) => (
-          <div key={a.id} className="px-3 py-2 border-b border-onyx-600/15 hover:bg-onyx-700/20">
-            <div className="flex items-center gap-2 text-[10px] text-onyx-300 tracking-[0.18em] uppercase">
-              <span className="tabular-nums">{fmtShortTs(a.ts)}</span>
-              <SignalPill severity={a.provider === 'mistral' ? 'info' : a.provider === 'ollama' ? 'warn' : 'error'} label={a.provider.toUpperCase()} />
+          <div
+            key={a.id}
+            className="px-4 py-3 border-b border-subtle hover:bg-surface-sunken transition"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-tertiary tabular-nums">{fmtShortTs(a.ts)}</span>
+              <Badge
+                tone={
+                  a.provider === 'mistral'
+                    ? 'info'
+                    : a.provider === 'ollama'
+                      ? 'warn'
+                      : 'muted'
+                }
+              >
+                {a.provider}
+              </Badge>
             </div>
-            <div className="text-onyx-100 leading-relaxed mt-1">{a.text}</div>
+            <div className="text-[13px] text-primary leading-relaxed mt-1.5">{a.text}</div>
           </div>
         ))}
         {reversed.length === 0 && (
-          <div className="px-3 py-6 text-[10px] uppercase tracking-[0.18em] text-onyx-300">awaiting analyst digest…</div>
+          <div className="px-4 py-8 text-center text-[12.5px] text-secondary">
+            Awaiting first analyst digest…
+          </div>
         )}
       </div>
     </Panel>

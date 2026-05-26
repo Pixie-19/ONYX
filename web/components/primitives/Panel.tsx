@@ -12,23 +12,48 @@ interface PanelProps {
   scroll?: boolean;
 }
 
-export function Panel({ title, badge, right, className, inner, children, scroll = false }: PanelProps) {
+/**
+ * Modular surface card. Used as the building block for every page section.
+ * Clean rounded chrome, soft shadow, no neon — premium, calm, scannable.
+ *
+ * API preserved: title / badge / right / inner / scroll / className still
+ * work exactly as before so every existing page renders without changes.
+ */
+export function Panel({
+  title,
+  badge,
+  right,
+  className,
+  inner,
+  children,
+  scroll = false,
+}: PanelProps) {
   return (
     <div className={cn('panel flex flex-col', className)}>
-      <span className="bracket-top-l" />
-      <span className="bracket-top-r" />
-      <span className="bracket-bot-l" />
-      <span className="bracket-bot-r" />
       {(title || badge || right) && (
-        <div className="flex-none flex items-center justify-between px-3 py-2 border-b border-onyx-600/40 relative">
-          <div className="flex items-center gap-2">
-            {title && <span className="panel-label">{title}</span>}
+        <div className="flex-none flex items-center justify-between gap-3 px-4 py-3 border-b border-line">
+          <div className="flex items-center gap-2 min-w-0">
+            {title && (
+              <span className="text-[12.5px] font-semibold text-primary tracking-tight truncate">
+                {title}
+              </span>
+            )}
             {badge}
           </div>
-          {right && <div className="text-[10px] uppercase tracking-[0.18em] text-onyx-300">{right}</div>}
+          {right && (
+            <div className="text-[11.5px] text-secondary flex items-center gap-2 shrink-0">
+              {right}
+            </div>
+          )}
         </div>
       )}
-      <div className={cn('flex-1 relative min-h-0', scroll && 'overflow-y-auto', inner ?? 'p-3')}>
+      <div
+        className={cn(
+          'flex-1 relative min-h-0',
+          scroll && 'overflow-y-auto',
+          inner ?? 'p-4',
+        )}
+      >
         {children}
       </div>
     </div>

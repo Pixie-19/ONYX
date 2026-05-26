@@ -5,12 +5,19 @@ import { Film, ChevronRight } from 'lucide-react';
 import { useOnyx } from '@/lib/store';
 import type { ReplayEvent } from '@/lib/types';
 import { fmtShortTs } from '@/lib/format';
-import { KIND_TO_SEVERITY, severityClass } from '@/lib/colors';
+import { KIND_TO_SEVERITY } from '@/lib/colors';
+
+const sevColor: Record<string, string> = {
+  info:     '#4F46E5',
+  warn:     '#F59E0B',
+  error:    '#EF4444',
+  critical: '#DC2626',
+};
 
 /**
- * Active only when the demo orchestrator transitions to phase 3 (chrono) OR
- * the user toggles cinema mode manually. Applies a violet vignette across the
- * cockpit and surfaces a horizontal causal cascade above the topology.
+ * Active during demo phase 3 (chrono) or when the user toggles cinema
+ * manually. Applies a soft violet wash and surfaces a horizontal causal
+ * cascade above the topology. Minimal, cinematic, never overwhelming.
  */
 export function ReplayCinema() {
   const cinema = useOnyx((s) => s.cinemaMode);
@@ -20,17 +27,17 @@ export function ReplayCinema() {
 
   const active = cinema || demoPhase === 3;
 
-  // Automatically exit cinema when phase advances past 3
   useEffect(() => {
     if (!cinema) return;
     if (demoPhase > 3) setCinema(false);
   }, [demoPhase, cinema, setCinema]);
 
-  // pull the last DEMO_PHASE root and its descendants
   const cascade = (() => {
     if (!active) return [] as ReplayEvent[];
     const recent = events.slice(-128);
-    const root = [...recent].reverse().find((e) => e.kind === 'AST_COMPLEXITY_SPIKE' || e.kind === 'FILE_MODIFIED');
+    const root = [...recent].reverse().find(
+      (e) => e.kind === 'AST_COMPLEXITY_SPIKE' || e.kind === 'FILE_MODIFIED',
+    );
     if (!root) return recent.slice(-8);
     const visited = new Set<string>([root.trace_id]);
     const out = [root];
@@ -64,35 +71,55 @@ export function ReplayCinema() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -8, opacity: 0 }}
             transition={{ duration: 0.32 }}
-            className="absolute top-[58px] left-1/2 -translate-x-1/2 z-[55] pointer-events-none"
+            className="absolute top-[72px] left-1/2 -translate-x-1/2 z-[55] pointer-events-none"
           >
-            <div className="panel px-6 py-2 min-w-[640px] backdrop-blur-md" style={{ boxShadow: '0 0 28px rgba(155,108,255,0.4), inset 0 0 0 1px rgba(155,108,255,0.5)' }}>
-              <span className="bracket-top-l" style={{ borderColor: '#9b6cff' }} />
-              <span className="bracket-top-r" style={{ borderColor: '#9b6cff' }} />
-              <span className="bracket-bot-l" style={{ borderColor: '#9b6cff' }} />
-              <span className="bracket-bot-r" style={{ borderColor: '#9b6cff' }} />
-              <div className="flex items-center gap-2 mb-1.5">
-                <Film size={13} className="text-violet-glow" />
-                <span className="text-[10.5px] tracking-[0.36em] uppercase text-violet-glow glow-violet">CINEMATIC REPLAY · CAUSAL RECONSTRUCTION</span>
+            <div
+              className="rounded-xl border bg-surface-raised shadow-panel-lg px-5 py-3 min-w-[640px]"
+              style={{ borderColor: 'rgba(124, 58, 237, 0.32)', backdropFilter: 'blur(10px)' }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-md bg-[#F5F3FF] dark:bg-violet-400/15 flex items-center justify-center">
+                  <Film size={13} className="text-[#7C3AED] dark:text-violet-300" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[12.5px] font-semibold text-primary leading-tight">
+                    Cinematic replay
+                  </span>
+                  <span className="text-[11px] text-secondary leading-tight">
+                    Causal reconstruction in progress
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-1 font-mono text-[10.5px] overflow-x-auto pb-1">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
                 {cascade.length === 0 ? (
-                  <span className="text-onyx-300 tracking-[0.18em] uppercase text-[10px]">awaiting causal anchor…</span>
+                  <span className="text-tertiary text-[11.5px]">Awaiting causal anchor…</span>
                 ) : (
                   cascade.map((e, i) => {
-                    const sev = (e.severity ?? KIND_TO_SEVERITY[e.kind] ?? 'info');
+                    const sev = e.severity ?? KIND_TO_SEVERITY[e.kind] ?? 'info';
+                    const color = sevColor[sev] ?? '#4F46E5';
                     return (
-                      <span key={e.id} className="flex items-center gap-1">
-                        {i > 0 && <ChevronRight size={11} className="text-onyx-300" />}
+                      <span key={e.id} className="flex items-center gap-1.5">
+                        {i > 0 && <ChevronRight size={12} className="text-tertiary" />}
                         <motion.span
                           initial={{ opacity: 0, x: -6 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: i * 0.08 }}
-                          className={`${severityClass(sev)} tracking-[0.12em] uppercase whitespace-nowrap`}
+                          className="inline-flex items-center gap-1.5 px-2 h-[22px] rounded-full text-[11px] font-medium whitespace-nowrap border"
+                          style={{
+                            color,
+                            borderColor: color + '40',
+                            background: color + '12',
+                          }}
                         >
-                          {e.kind.replace(/_/g, ' ')}
+                          <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ background: color }}
+                          />
+                          {e.kind.replace(/_/g, ' ').toLowerCase()}
                         </motion.span>
-                        <span className="text-onyx-300 tabular-nums text-[9.5px]">{fmtShortTs(e.ts)}</span>
+                        <span className="text-tertiary text-[10.5px] tabular-nums">
+                          {fmtShortTs(e.ts)}
+                        </span>
                       </span>
                     );
                   })

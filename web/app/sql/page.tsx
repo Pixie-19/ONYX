@@ -16,35 +16,48 @@ export default function SqlPage() {
   return (
     <div className="h-full flex flex-col">
       <PageHeader
-        icon={<Database size={14} />}
-        title="RELATIONAL EXECUTION ENGINE"
-        subtitle="Cross-source SQL joins · onyx_cognition"
+        icon={<Database size={16} />}
+        title="SQL intelligence"
+        subtitle="Cross-source relational queries · onyx_cognition"
         meta={
           <>
-            <Badge tone="muted">{intel.length} EXECUTIONS</Badge>
+            <Badge tone="muted">{intel.length} executions</Badge>
             <Badge tone="info">Σ {fmtMs(totalLatency)}</Badge>
           </>
         }
       />
 
-      <div className="flex-1 min-h-0 p-3 grid grid-cols-[1fr_320px] gap-3">
+      <div className="flex-1 min-h-0 p-6 grid grid-cols-[1fr_360px] gap-4 surface-base">
         <SqlIntelligenceFeed />
 
-        <Panel title="EXECUTION HISTORY" right={`${history.length} runs`} className="h-full" inner="p-0" scroll>
-          <div className="font-mono text-[10.5px]">
+        <Panel title="Execution history" right={`${history.length} runs`} inner="p-0" scroll>
+          <div>
             {history.map((r) => (
-              <div key={r.id} className="px-3 py-2 border-b border-onyx-600/20 hover:bg-onyx-700/30">
+              <div
+                key={r.id}
+                className="px-4 py-3 border-b border-subtle hover:bg-surface-sunken transition"
+              >
                 <div className="flex items-center gap-2">
-                  <span className="text-onyx-300 tabular-nums">{fmtShortTs(r.ts)}</span>
-                  <Badge tone={r.severity as any}>{r.rows.length} ROWS</Badge>
-                  <span className="ml-auto text-onyx-300 text-[10px]">{fmtMs(r.latency_ms)}</span>
+                  <span className="text-[11px] text-tertiary tabular-nums">
+                    {fmtShortTs(r.ts)}
+                  </span>
+                  <Badge tone={r.severity as any}>{r.rows.length} rows</Badge>
+                  <span className="ml-auto text-[11px] text-tertiary tabular-nums">
+                    {fmtMs(r.latency_ms)}
+                  </span>
                 </div>
-                <div className="text-onyx-100 mt-1 truncate">{r.query_id}</div>
-                <div className="text-[10px] text-cyan-glow/90 mt-1 line-clamp-2">{r.summary}</div>
+                <div className="text-[12.5px] font-medium text-primary mt-1 truncate">
+                  {r.query_id}
+                </div>
+                <div className="text-[11.5px] text-secondary mt-0.5 line-clamp-2">
+                  {r.summary}
+                </div>
               </div>
             ))}
             {history.length === 0 && (
-              <div className="px-3 py-4 text-[10px] uppercase tracking-[0.18em] text-onyx-300">no executions yet · awaiting engine cadence</div>
+              <div className="px-4 py-6 text-[12px] text-secondary text-center">
+                No executions yet · awaiting engine cadence
+              </div>
             )}
           </div>
         </Panel>

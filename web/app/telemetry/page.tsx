@@ -1,12 +1,24 @@
 'use client';
 import { useMemo } from 'react';
-import { Activity, Cpu, MemoryStick, Thermometer, HardDrive, Network as NetIcon } from 'lucide-react';
+import { Activity, Cpu, MemoryStick, Thermometer, HardDrive, ArrowDown, ArrowUp } from 'lucide-react';
 import { useOnyx } from '@/lib/store';
 import { PageHeader } from '@/components/shell/PageHeader';
 import { Panel } from '@/components/primitives/Panel';
 import { Sparkline } from '@/components/primitives/Sparkline';
 import { Badge } from '@/components/ui/Badge';
 import { fmtPct } from '@/lib/format';
+
+const COL = {
+  cpu:     { stroke: '#4F46E5', fill: 'rgba(79,70,229,0.10)' },
+  mem:     { stroke: '#7C3AED', fill: 'rgba(124,58,237,0.10)' },
+  thermal: { stroke: '#EC4899', fill: 'rgba(236,72,153,0.10)' },
+  disk:    { stroke: '#10B981', fill: 'rgba(16,185,129,0.10)' },
+  swap:    { stroke: '#EF4444', fill: 'rgba(239,68,68,0.10)' },
+  procs:   { stroke: '#3B82F6', fill: 'rgba(59,130,246,0.10)' },
+  netIn:   { stroke: '#10B981', fill: 'rgba(16,185,129,0.10)' },
+  netOut:  { stroke: '#F59E0B', fill: 'rgba(245,158,11,0.10)' },
+  press:   { stroke: '#F59E0B', fill: 'rgba(245,158,11,0.10)' },
+};
 
 export default function TelemetryPage() {
   const telemetry = useOnyx((s) => s.telemetry);
@@ -35,123 +47,223 @@ export default function TelemetryPage() {
   }, [network]);
 
   const thermalBand = last?.thermal_state ?? 'nominal';
-  const thermalTone = thermalBand === 'critical' ? 'critical' : thermalBand === 'hot' ? 'error' : thermalBand === 'warm' ? 'warn' : 'info';
+  const thermalTone =
+    thermalBand === 'critical'
+      ? 'critical'
+      : thermalBand === 'hot'
+        ? 'error'
+        : thermalBand === 'warm'
+          ? 'warn'
+          : 'ok';
 
   return (
     <div className="h-full flex flex-col">
       <PageHeader
-        icon={<Activity size={14} />}
-        title="CYBERNETICS · TELEMETRY"
-        subtitle="Realtime host state vector · 1s grain"
+        icon={<Activity size={16} />}
+        title="Telemetry"
+        subtitle="Realtime host state vector · 1 second grain"
         meta={
           <>
-            <Badge tone={thermalTone}>THERMAL · {thermalBand.toUpperCase()}</Badge>
-            <Badge tone="muted">{telemetry.length} SAMPLES</Badge>
+            <Badge tone={thermalTone as any}>Thermal · {thermalBand}</Badge>
+            <Badge tone="muted">{telemetry.length} samples</Badge>
           </>
         }
       />
 
-      <div className="flex-1 min-h-0 overflow-auto p-3 grid grid-cols-12 gap-3 auto-rows-min">
-        <MetricCard
-          icon={<Cpu size={12} />}
-          label="CPU LOAD"
-          value={fmtPct(last?.cpu_load ?? 0, 2)}
-          tone={(last?.cpu_load ?? 0) > 0.85 ? 'error' : (last?.cpu_load ?? 0) > 0.7 ? 'warn' : 'info'}
-          sparkline={cpu}
-          colorPair={['#22e8ff', 'rgba(34,232,255,0.14)']}
-          thresholds={{ warn: 0.7, crit: 0.9 }}
-          className="col-span-3"
-        />
-        <MetricCard
-          icon={<MemoryStick size={12} />}
-          label="MEMORY USED"
-          value={fmtPct(last?.mem_used_pct ?? 0, 2)}
-          tone={(last?.mem_used_pct ?? 0) > 0.9 ? 'critical' : (last?.mem_used_pct ?? 0) > 0.75 ? 'warn' : 'info'}
-          sparkline={mem}
-          colorPair={['#9b6cff', 'rgba(155,108,255,0.14)']}
-          thresholds={{ warn: 0.7, crit: 0.9 }}
-          className="col-span-3"
-        />
-        <MetricCard
-          icon={<Thermometer size={12} />}
-          label="THERMAL"
-          value={last?.cpu_temp_c ? `${last.cpu_temp_c.toFixed(1)}°C` : '—'}
-          tone={thermalTone}
-          sparkline={therm}
-          colorPair={['#ff6cd6', 'rgba(255,108,214,0.14)']}
-          className="col-span-3"
-        />
-        <MetricCard
-          icon={<HardDrive size={12} />}
-          label="DISK BUSY"
-          value={fmtPct(last?.disk_busy_pct ?? 0, 2)}
-          tone="info"
-          sparkline={disk}
-          colorPair={['#46f5b8', 'rgba(70,245,184,0.14)']}
-          className="col-span-3"
-        />
+      <div className="flex-1 min-h-0 overflow-auto p-6 surface-base">
+        <div className="grid grid-cols-12 gap-4 max-w-[1480px] mx-auto">
+          {/* Top row — 4 hero metric cards */}
+          <MetricCard
+            className="col-span-3"
+            icon={<Cpu size={14} />}
+            label="CPU load"
+            value={fmtPct(last?.cpu_load ?? 0, 1)}
+            tone={(last?.cpu_load ?? 0) > 0.85 ? 'error' : (last?.cpu_load ?? 0) > 0.7 ? 'warn' : 'ok'}
+            sparkline={cpu}
+            colors={COL.cpu}
+            thresholds={{ warn: 0.7, crit: 0.9 }}
+          />
+          <MetricCard
+            className="col-span-3"
+            icon={<MemoryStick size={14} />}
+            label="Memory used"
+            value={fmtPct(last?.mem_used_pct ?? 0, 1)}
+            tone={(last?.mem_used_pct ?? 0) > 0.9 ? 'critical' : (last?.mem_used_pct ?? 0) > 0.75 ? 'warn' : 'ok'}
+            sparkline={mem}
+            colors={COL.mem}
+            thresholds={{ warn: 0.7, crit: 0.9 }}
+          />
+          <MetricCard
+            className="col-span-3"
+            icon={<Thermometer size={14} />}
+            label="Thermal"
+            value={last?.cpu_temp_c ? `${last.cpu_temp_c.toFixed(1)}°C` : '—'}
+            tone={thermalTone as any}
+            sparkline={therm}
+            colors={COL.thermal}
+          />
+          <MetricCard
+            className="col-span-3"
+            icon={<HardDrive size={14} />}
+            label="Disk busy"
+            value={fmtPct(last?.disk_busy_pct ?? 0, 1)}
+            tone={(last?.disk_busy_pct ?? 0) > 0.85 ? 'error' : 'ok'}
+            sparkline={disk}
+            colors={COL.disk}
+          />
 
-        <Panel title="MEMORY PRESSURE WINDOW" right={`${last?.mem_pressure?.toFixed(3) ?? '0.000'}`} className="col-span-6 h-[220px]">
-          <Sparkline values={press} width={520} height={150} stroke="#ffb84a" fill="rgba(255,184,74,0.14)" min={0} max={1} thresholds={{ warn: 0.4, crit: 0.7 }} />
-          <div className="grid grid-cols-3 gap-2 mt-3 text-[10px]">
-            <Stat label="Swap"   value={fmtPct(last?.swap_used_pct ?? 0, 2)} />
-            <Stat label="Disk IOPS" value={(last?.disk_iops ?? 0).toFixed(0)} />
-            <Stat label="Procs"  value={String(last?.process_count ?? 0)} />
-          </div>
-        </Panel>
+          {/* Memory pressure window */}
+          <Panel title="Memory pressure window" right={`${(last?.mem_pressure ?? 0).toFixed(3)}`} className="col-span-8">
+            <Sparkline
+              values={press}
+              width={760}
+              height={170}
+              stroke={COL.press.stroke}
+              fill={COL.press.fill}
+              min={0}
+              max={1}
+              thresholds={{ warn: 0.4, crit: 0.7 }}
+            />
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              <Stat label="Swap used"     value={fmtPct(last?.swap_used_pct ?? 0, 1)} />
+              <Stat label="Disk IOPS"     value={(last?.disk_iops ?? 0).toFixed(0)} />
+              <Stat label="Process count" value={String(last?.process_count ?? 0)} />
+            </div>
+          </Panel>
 
-        <Panel title="SWAP USAGE" className="col-span-3 h-[220px]">
-          <Sparkline values={swap} width={240} height={150} stroke="#ff5d6f" fill="rgba(255,93,111,0.12)" min={0} max={1} />
-          <div className="mt-2 text-[10.5px] text-onyx-300 tracking-[0.18em] uppercase">
-            Headroom · {(((1 - (last?.swap_used_pct ?? 0)) * 100).toFixed(1))}%
-          </div>
-        </Panel>
+          {/* Swap usage */}
+          <Panel title="Swap" className="col-span-4">
+            <Sparkline
+              values={swap}
+              width={300}
+              height={170}
+              stroke={COL.swap.stroke}
+              fill={COL.swap.fill}
+              min={0}
+              max={1}
+            />
+            <div className="mt-3 text-[12px] text-secondary">
+              Headroom · {((1 - (last?.swap_used_pct ?? 0)) * 100).toFixed(1)}%
+            </div>
+          </Panel>
 
-        <Panel title="PROCESS COUNT" className="col-span-3 h-[220px]">
-          <Sparkline values={procs} width={240} height={150} stroke="#22e8ff" fill="rgba(34,232,255,0.12)" min={0} max={1} />
-          <div className="mt-2 text-[10.5px] text-onyx-300 tracking-[0.18em] uppercase">
-            Latest · {last?.process_count ?? 0}
-          </div>
-        </Panel>
+          {/* Network I/O */}
+          <Panel
+            title="Network ingress"
+            right={<span className="inline-flex items-center gap-1 text-[#047857] dark:text-emerald-300"><ArrowDown size={12} /> bytes / probe</span>}
+            className="col-span-6"
+          >
+            <Sparkline
+              values={netIn}
+              width={520}
+              height={160}
+              stroke={COL.netIn.stroke}
+              fill={COL.netIn.fill}
+              min={0}
+              max={Math.max(...netIn, 2048)}
+            />
+          </Panel>
+          <Panel
+            title="Network egress"
+            right={<span className="inline-flex items-center gap-1 text-[#B45309] dark:text-amber-300"><ArrowUp size={12} /> bytes / probe</span>}
+            className="col-span-6"
+          >
+            <Sparkline
+              values={netOut}
+              width={520}
+              height={160}
+              stroke={COL.netOut.stroke}
+              fill={COL.netOut.fill}
+              min={0}
+              max={Math.max(...netOut, 1024)}
+            />
+          </Panel>
 
-        <Panel title="NETWORK INGRESS · BYTES/PROBE" className="col-span-6 h-[200px]" badge={<Badge tone="info"><NetIcon size={10} /> IN</Badge>}>
-          <Sparkline values={netIn} width={520} height={140} stroke="#46f5b8" fill="rgba(70,245,184,0.12)" min={0} max={Math.max(...netIn, 2048)} />
-        </Panel>
-
-        <Panel title="NETWORK EGRESS · BYTES/PROBE" className="col-span-6 h-[200px]" badge={<Badge tone="info"><NetIcon size={10} /> OUT</Badge>}>
-          <Sparkline values={netOut} width={520} height={140} stroke="#ffb84a" fill="rgba(255,184,74,0.12)" min={0} max={Math.max(...netOut, 1024)} />
-        </Panel>
+          {/* Process counts */}
+          <Panel title="Process count" className="col-span-12">
+            <div className="flex items-end gap-6">
+              <div className="metric-xl">{last?.process_count ?? 0}</div>
+              <div className="flex-1">
+                <Sparkline
+                  values={procs}
+                  width={860}
+                  height={70}
+                  stroke={COL.procs.stroke}
+                  fill={COL.procs.fill}
+                  min={0}
+                  max={1}
+                />
+              </div>
+            </div>
+          </Panel>
+        </div>
       </div>
     </div>
   );
 }
 
-function MetricCard({ icon, label, value, tone, sparkline, colorPair, thresholds, className }: {
-  icon: React.ReactNode; label: string; value: string;
+function MetricCard({
+  icon,
+  label,
+  value,
+  tone,
+  sparkline,
+  colors,
+  thresholds,
+  className,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
   tone: 'info' | 'warn' | 'error' | 'critical' | 'ok' | 'muted';
-  sparkline: number[]; colorPair: [string, string];
+  sparkline: number[];
+  colors: { stroke: string; fill: string };
   thresholds?: { warn?: number; crit?: number };
   className?: string;
 }) {
+  const dotColor =
+    tone === 'ok'
+      ? '#10B981'
+      : tone === 'warn'
+        ? '#F59E0B'
+        : tone === 'error'
+          ? '#EF4444'
+          : tone === 'critical'
+            ? '#DC2626'
+            : '#9CA3AF';
   return (
-    <Panel className={className + ' h-[150px]'}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5 text-onyx-300">
-          {icon}
-          <span className="panel-label">{label}</span>
+    <div className={`panel ${className ?? ''}`}>
+      <div className="p-5">
+        <div className="flex items-center justify-between">
+          <span className="inline-flex items-center gap-2 text-[12px] text-secondary">
+            <span className="text-tertiary">{icon}</span>
+            {label}
+          </span>
+          <span className="w-2 h-2 rounded-full" style={{ background: dotColor }} />
         </div>
-        <Badge tone={tone}>{value}</Badge>
+        <div className="mt-2 metric-xl">{value}</div>
+        <div className="mt-2">
+          <Sparkline
+            values={sparkline}
+            width={260}
+            height={50}
+            stroke={colors.stroke}
+            fill={colors.fill}
+            min={0}
+            max={1}
+            thresholds={thresholds}
+          />
+        </div>
       </div>
-      <Sparkline values={sparkline} width={240} height={70} stroke={colorPair[0]} fill={colorPair[1]} min={0} max={1} thresholds={thresholds} />
-    </Panel>
+    </div>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-onyx-600/30 px-2 py-1.5 bg-onyx-900/40">
-      <div className="panel-label">{label}</div>
-      <div className="text-onyx-100 font-mono text-[13px] tabular-nums">{value}</div>
+    <div className="rounded-md border border-line p-3 surface-inset">
+      <div className="text-[11px] text-tertiary">{label}</div>
+      <div className="text-[16px] font-semibold text-primary tabular-nums mt-0.5">{value}</div>
     </div>
   );
 }

@@ -1,22 +1,23 @@
 'use client';
 import Link from 'next/link';
-import { FolderInput } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 export default function NotFound() {
   return (
-    <div className="h-full grid place-items-center text-onyx-100 p-10">
-      <div className="text-center space-y-4">
-        <div className="font-display text-[48px] tracking-[0.32em] glow-cyan">404</div>
-        <div className="text-[11px] tracking-[0.32em] uppercase text-onyx-300">
-          ROUTE NOT IN OPERATIONAL TOPOLOGY
+    <div className="h-full grid place-items-center p-10 surface-base">
+      <div className="text-center max-w-[440px]">
+        <div className="text-[64px] font-semibold tracking-tight text-primary leading-none">404</div>
+        <div className="text-[14px] text-secondary mt-2">
+          Route not in operational topology
         </div>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 px-3 py-1.5 border border-cyan-glow/60 text-cyan-glow text-[10px] tracking-[0.22em] uppercase hover:bg-cyan-glow/10 transition mt-4"
-        >
-          <FolderInput size={11} /> RETURN TO CONNECTOR
+        <p className="text-[12.5px] text-tertiary mt-3 leading-relaxed">
+          The page you're looking for doesn't exist or has been moved. Head back to the overview to
+          continue.
+        </p>
+        <Link href="/" className="btn btn-primary h-9 px-4 mt-5 text-[12.5px]">
+          <ArrowLeft size={13} /> Return to overview
         </Link>
       </div>
     </div>

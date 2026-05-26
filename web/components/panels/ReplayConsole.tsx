@@ -1,19 +1,25 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Play, Pause, RotateCcw } from 'lucide-react';
 import { useOnyx } from '@/lib/store';
 import { Panel } from '@/components/primitives/Panel';
-import { SignalPill } from '@/components/primitives/SignalPill';
 import { fmtShortTs, ONYX_HTTP } from '@/lib/format';
-import { severityClass } from '@/lib/colors';
 import type { ReplayEvent, Severity } from '@/lib/types';
 
 interface ReplayState {
   events: ReplayEvent[];
   windowFrom: number;
   windowTo: number;
-  cursor: number;     // 0..1
+  cursor: number;
   playing: boolean;
 }
+
+const SEV_COLOR: Record<Severity, string> = {
+  info:     '#4F46E5',
+  warn:     '#F59E0B',
+  error:    '#EF4444',
+  critical: '#DC2626',
+};
 
 export function ReplayConsole() {
   const liveEvents = useOnyx((s) => s.events);
@@ -33,9 +39,17 @@ export function ReplayConsole() {
     const from = to - 5 * 60_000;
     try {
       const r = await fetch(`${ONYX_HTTP}/replay/window?from=${from}&to=${to}`);
-      const d = await r.json() as { events: ReplayEvent[] };
-      setState((s) => ({ ...s, events: d.events ?? [], windowFrom: from, windowTo: to, cursor: 1 }));
-    } catch { /* ignore */ }
+      const d = (await r.json()) as { events: ReplayEvent[] };
+      setState((s) => ({
+        ...s,
+        events: d.events ?? [],
+        windowFrom: from,
+        windowTo: to,
+        cursor: 1,
+      }));
+    } catch {
+      /* ignore */
+    }
   };
 
   useEffect(() => {
@@ -44,7 +58,6 @@ export function ReplayConsole() {
     void load();
   }, []);
 
-  // also keep up with live tail when cursor is at 1
   useEffect(() => {
     if (state.cursor < 0.995) return;
     setState((s) => ({
@@ -55,10 +68,12 @@ export function ReplayConsole() {
     }));
   }, [liveEvents, state.cursor]);
 
-  // playback
   useEffect(() => {
     if (!state.playing) {
-      if (tick.current) { clearInterval(tick.current); tick.current = null; }
+      if (tick.current) {
+        clearInterval(tick.current);
+        tick.current = null;
+      }
       return;
     }
     tick.current = setInterval(() => {
@@ -67,46 +82,64 @@ export function ReplayConsole() {
         return { ...s, cursor: next, playing: next < 1 };
       });
     }, 80);
-    return () => { if (tick.current) clearInterval(tick.current); };
+    return () => {
+      if (tick.current) clearInterval(tick.current);
+    };
   }, [state.playing]);
 
   const cursorTs = state.windowFrom + (state.windowTo - state.windowFrom) * state.cursor;
-  const visible = useMemo(() => state.events.filter((e) => e.ts <= cursorTs), [state.events, cursorTs]);
-
-  // causal cluster: anything in last 1.5s of cursor
-  const cluster = useMemo(() => visible.filter((e) => e.ts >= cursorTs - 1500), [visible, cursorTs]);
+  const visible = useMemo(
+    () => state.events.filter((e) => e.ts <= cursorTs),
+    [state.events, cursorTs],
+  );
+  const cluster = useMemo(
+    () => visible.filter((e) => e.ts >= cursorTs - 1500),
+    [visible, cursorTs],
+  );
 
   return (
     <Panel
-      title="CHRONO REPLAY · CAUSAL RECONSTRUCTION"
-      right={`${visible.length}/${state.events.length} EVENTS`}
+      title="Chrono replay · causal reconstruction"
+      right={`${visible.length} / ${state.events.length} events`}
       className="h-full"
       inner="p-0"
     >
       <div className="grid grid-rows-[1fr_auto] h-full">
-        <div className="p-3 overflow-auto font-mono text-[10.5px]">
-          <div className="hr-label mb-2" suppressHydrationWarning>
-            CURSOR · {mounted ? fmtShortTs(cursorTs) : '——:——:——'}
+        <div className="p-5 overflow-auto">
+          <div className="hr-label mb-3" suppressHydrationWarning>
+            Cursor · {mounted ? fmtShortTs(cursorTs) : '—:—:—'}
           </div>
           <CausalTree events={cluster} />
         </div>
-        <div className="border-t border-onyx-600/30 p-3 space-y-2 bg-onyx-900/40">
+        <div className="border-t border-line p-4 space-y-3 surface-inset">
           <Scrubber state={state} setState={setState} />
           <div className="flex items-center gap-2">
             <button
               onClick={() => setState((s) => ({ ...s, cursor: 0, playing: true }))}
-              className="text-[10px] uppercase tracking-[0.22em] px-3 py-1.5 border border-cyan-glow/60 text-cyan-glow hover:bg-cyan-glow/10"
-            >▶ PLAY</button>
+              className="btn btn-accent h-8 px-3 text-[12.5px]"
+            >
+              <Play size={12} /> Play
+            </button>
             <button
               onClick={() => setState((s) => ({ ...s, playing: false }))}
-              className="text-[10px] uppercase tracking-[0.22em] px-3 py-1.5 border border-onyx-600 text-onyx-100 hover:bg-onyx-700/40"
-            >❚❚ PAUSE</button>
+              className="btn btn-outline h-8 px-3 text-[12.5px]"
+            >
+              <Pause size={12} /> Pause
+            </button>
             <button
               onClick={load}
-              className="text-[10px] uppercase tracking-[0.22em] px-3 py-1.5 border border-violet-glow/60 text-violet-glow hover:bg-violet-glow/10"
-            >↺ RELOAD</button>
-            <div className="ml-auto text-[10px] tracking-[0.18em] uppercase text-onyx-300" suppressHydrationWarning>
-              {mounted ? <>WINDOW · {fmtShortTs(state.windowFrom)} → {fmtShortTs(state.windowTo)}</> : <>WINDOW · ——</>}
+              className="btn btn-ghost h-8 px-3 text-[12.5px]"
+            >
+              <RotateCcw size={12} /> Reload
+            </button>
+            <div className="ml-auto text-[11.5px] text-tertiary" suppressHydrationWarning>
+              {mounted ? (
+                <>
+                  Window · {fmtShortTs(state.windowFrom)} → {fmtShortTs(state.windowTo)}
+                </>
+              ) : (
+                'Window · —'
+              )}
             </div>
           </div>
         </div>
@@ -115,10 +148,15 @@ export function ReplayConsole() {
   );
 }
 
-function Scrubber({ state, setState }: { state: ReplayState; setState: React.Dispatch<React.SetStateAction<ReplayState>> }) {
+function Scrubber({
+  state,
+  setState,
+}: {
+  state: ReplayState;
+  setState: React.Dispatch<React.SetStateAction<ReplayState>>;
+}) {
   const ref = useRef<HTMLDivElement>(null);
 
-  // distribute events along the bar as ticks
   const ticks = useMemo(() => {
     if (state.events.length === 0) return [];
     return state.events.map((e) => {
@@ -138,8 +176,10 @@ function Scrubber({ state, setState }: { state: ReplayState; setState: React.Dis
     <div
       ref={ref}
       onMouseDown={onMove}
-      onMouseMove={(e) => { if (e.buttons === 1) onMove(e); }}
-      className="relative h-7 bg-onyx-950 border border-onyx-600/40 cursor-pointer select-none"
+      onMouseMove={(e) => {
+        if (e.buttons === 1) onMove(e);
+      }}
+      className="relative h-9 rounded-md border border-line bg-surface-raised cursor-pointer select-none overflow-hidden"
     >
       {ticks.map((t, i) => (
         <span
@@ -147,17 +187,14 @@ function Scrubber({ state, setState }: { state: ReplayState; setState: React.Dis
           className="absolute top-1 bottom-1"
           style={{
             left: `${(t.u * 100).toFixed(2)}%`,
-            width: 1,
-            background:
-              t.severity === 'critical' ? '#ff2d6b' :
-              t.severity === 'error' ? '#ff5d6f' :
-              t.severity === 'warn' ? '#ffb84a' : '#22e8ff',
-            opacity: 0.55,
+            width: 1.5,
+            background: SEV_COLOR[t.severity] ?? '#4F46E5',
+            opacity: 0.65,
           }}
         />
       ))}
       <span
-        className="absolute top-0 bottom-0 w-[1.5px] bg-cyan-glow shadow-cyan-glow"
+        className="absolute top-0 bottom-0 w-[2px] bg-[#4F46E5]"
         style={{ left: `${(state.cursor * 100).toFixed(2)}%` }}
       />
     </div>
@@ -165,7 +202,6 @@ function Scrubber({ state, setState }: { state: ReplayState; setState: React.Dis
 }
 
 function CausalTree({ events }: { events: ReplayEvent[] }) {
-  // group by trace_id, then nest by parent_trace_id
   const byTrace = useMemo(() => {
     const m = new Map<string, ReplayEvent[]>();
     for (const e of events) {
@@ -176,19 +212,39 @@ function CausalTree({ events }: { events: ReplayEvent[] }) {
     return m;
   }, [events]);
 
-  const roots = useMemo(() => events.filter((e) => !e.parent_trace_id || !byTrace.has(e.parent_trace_id)).slice(0, 30), [events, byTrace]);
+  const roots = useMemo(
+    () =>
+      events
+        .filter((e) => !e.parent_trace_id || !byTrace.has(e.parent_trace_id))
+        .slice(0, 30),
+    [events, byTrace],
+  );
 
   if (events.length === 0) {
-    return <div className="text-onyx-300 text-[10px] uppercase tracking-[0.18em]">no events in window cursor zone</div>;
+    return (
+      <div className="text-[12.5px] text-secondary py-6 text-center">
+        No events in cursor zone
+      </div>
+    );
   }
   return (
     <div className="space-y-1">
-      {roots.map((e) => <CausalRow key={e.id} ev={e} byTrace={byTrace} depth={0} />)}
+      {roots.map((e) => (
+        <CausalRow key={e.id} ev={e} byTrace={byTrace} depth={0} />
+      ))}
     </div>
   );
 }
 
-function CausalRow({ ev, byTrace, depth }: { ev: ReplayEvent; byTrace: Map<string, ReplayEvent[]>; depth: number }) {
+function CausalRow({
+  ev,
+  byTrace,
+  depth,
+}: {
+  ev: ReplayEvent;
+  byTrace: Map<string, ReplayEvent[]>;
+  depth: number;
+}) {
   const children = useMemo(() => {
     const out: ReplayEvent[] = [];
     for (const arr of byTrace.values()) {
@@ -197,19 +253,34 @@ function CausalRow({ ev, byTrace, depth }: { ev: ReplayEvent; byTrace: Map<strin
       }
     }
     return out;
-  }, [ev.trace_id, byTrace]);
+  }, [ev.trace_id, ev.id, byTrace]);
+
+  const sev = (ev.severity ?? 'info') as Severity;
+  const color = SEV_COLOR[sev];
 
   return (
     <div>
       <div
-        className="flex items-center gap-2"
-        style={{ paddingLeft: depth * 14 }}
+        className="flex items-center gap-2.5 py-1.5 px-2 -mx-2 rounded-md hover:bg-surface-sunken"
+        style={{ paddingLeft: depth * 18 + 8 }}
       >
-        <span className="text-onyx-300 tabular-nums w-[88px]">{fmtShortTs(ev.ts)}</span>
-        <span className={severityClass(ev.severity)}>{ev.kind}</span>
-        <span className="text-onyx-100 truncate">{ev.target ?? ev.source}</span>
+        <span
+          className="w-1.5 h-1.5 rounded-full shrink-0"
+          style={{ background: color }}
+        />
+        <span className="text-[11.5px] text-tertiary tabular-nums w-[80px] shrink-0">
+          {fmtShortTs(ev.ts)}
+        </span>
+        <span className="text-[12.5px] font-medium" style={{ color }}>
+          {ev.kind.replace(/_/g, ' ').toLowerCase()}
+        </span>
+        <span className="text-[12.5px] text-secondary truncate">
+          {ev.target ?? ev.source}
+        </span>
       </div>
-      {children.slice(0, 8).map((c) => <CausalRow key={c.id} ev={c} byTrace={byTrace} depth={depth + 1} />)}
+      {children.slice(0, 8).map((c) => (
+        <CausalRow key={c.id} ev={c} byTrace={byTrace} depth={depth + 1} />
+      ))}
     </div>
   );
 }

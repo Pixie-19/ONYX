@@ -18,12 +18,13 @@ const mono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'ONYX · Execution Intelligence Infrastructure',
-  description: 'Autonomous execution intelligence infrastructure — a relational cognition platform for software execution.',
+  description:
+    'Autonomous execution intelligence infrastructure — a relational cognition platform for software execution.',
   icons: { icon: '/favicon.svg' },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#040608',
+  themeColor: '#F7F8FA',
   width: 'device-width',
   initialScale: 1,
 };
@@ -37,8 +38,8 @@ export const fetchCache = 'force-no-store';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`dark ${sans.variable} ${mono.variable}`} suppressHydrationWarning>
-      <body className="antialiased scanlines" suppressHydrationWarning>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+      <body className="antialiased" suppressHydrationWarning>
         <CockpitShell>{children}</CockpitShell>
       </body>
     </html>

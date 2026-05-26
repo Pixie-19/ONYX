@@ -16,7 +16,6 @@ export default function ConnectPage() {
   const setActive = useOnyx((s) => s.setActiveWorkspace);
   const processes = useOnyx((s) => s.workspaceProcesses);
 
-  // de-duplicate runtime services by port (latest wins)
   const services = useMemo(() => {
     const m = new Map<string, WorkspaceProcessRow>();
     for (const p of processes.slice().reverse()) {
@@ -30,28 +29,28 @@ export default function ConnectPage() {
   return (
     <div className="h-full flex flex-col">
       <PageHeader
-        icon={<FolderInput size={14} />}
-        title="WORKSPACE CONNECTOR"
+        icon={<FolderInput size={16} />}
+        title="Workspace connector"
         subtitle="Attach a real project · activate execution intelligence"
         meta={
           <>
             <Badge tone={workspaces.length > 0 ? 'ok' : 'warn'}>
-              {workspaces.length} WORKSPACE{workspaces.length === 1 ? '' : 'S'}
+              {workspaces.length} workspace{workspaces.length === 1 ? '' : 's'}
             </Badge>
-            <Badge tone="muted">{services.length} RUNTIME SERVICES</Badge>
+            <Badge tone="muted">{services.length} runtime services</Badge>
           </>
         }
       />
 
-      <div className="flex-1 min-h-0 overflow-auto p-4">
-        <div className="grid grid-cols-12 gap-4 max-w-[1280px] mx-auto">
+      <div className="flex-1 min-h-0 overflow-auto p-6 surface-base">
+        <div className="grid grid-cols-12 gap-4 max-w-[1320px] mx-auto">
           <div className="col-span-8">
             <WorkspaceConnector />
           </div>
 
-          <div className="col-span-4 space-y-3">
-            <Panel title="ATTACHED WORKSPACES" right={`${workspaces.length}`} className="min-h-[200px]">
-              <div className="space-y-2 max-h-[420px] overflow-auto">
+          <div className="col-span-4 space-y-4">
+            <Panel title="Attached workspaces" right={`${workspaces.length}`} className="min-h-[240px]">
+              <div className="space-y-2 max-h-[460px] overflow-auto">
                 {workspaces.map((ws) => (
                   <WorkspaceCard
                     key={ws.id}
@@ -61,7 +60,7 @@ export default function ConnectPage() {
                   />
                 ))}
                 {workspaces.length === 0 && (
-                  <div className="text-[10.5px] tracking-[0.18em] uppercase text-onyx-300 leading-relaxed py-6 text-center">
+                  <div className="text-[12.5px] text-secondary leading-relaxed py-8 text-center">
                     No workspaces attached. Connect a real project above to activate the intelligence pipeline.
                   </div>
                 )}
@@ -69,24 +68,35 @@ export default function ConnectPage() {
             </Panel>
 
             <Panel
-              title="RUNTIME DISCOVERY"
-              right="LAST 30s"
-              badge={<Badge tone="info"><Plug size={10} /> LIVE</Badge>}
-              className="min-h-[200px]"
+              title="Runtime discovery"
+              right="Last 30s"
+              badge={
+                <span className="inline-flex items-center gap-1 text-[11.5px] text-[#047857] dark:text-emerald-300">
+                  <Plug size={11} /> live
+                </span>
+              }
+              className="min-h-[240px]"
             >
-              <div className="space-y-1 font-mono text-[11px] max-h-[260px] overflow-auto">
+              <div className="space-y-1 max-h-[300px] overflow-auto">
                 {services.map((s) => (
-                  <div key={s.id} className="flex items-center gap-2 px-2 py-1 border border-onyx-600/20 bg-onyx-900/40">
-                    <Cpu size={11} className="text-cyan-glow shrink-0" />
-                    <span className="text-onyx-100 truncate flex-1">{s.command}</span>
-                    {s.port && <Badge tone="info" className="!py-0">:{s.port}</Badge>}
-                    <Badge tone="muted" className="!py-0">{s.kind.toUpperCase()}</Badge>
-                    <span className="text-onyx-300 tabular-nums text-[9.5px]">{fmtShortTs(s.ts)}</span>
+                  <div
+                    key={s.id}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-line bg-surface-raised"
+                  >
+                    <Cpu size={12} className="text-tertiary shrink-0" />
+                    <span className="text-[12px] text-primary truncate flex-1 font-mono">
+                      {s.command}
+                    </span>
+                    {s.port && <Badge tone="info">:{s.port}</Badge>}
+                    <Badge tone="muted">{s.kind}</Badge>
+                    <span className="text-[10.5px] text-tertiary tabular-nums">
+                      {fmtShortTs(s.ts)}
+                    </span>
                   </div>
                 ))}
                 {services.length === 0 && (
-                  <div className="text-[10.5px] tracking-[0.18em] uppercase text-onyx-300 py-4 text-center">
-                    Probing common dev ports… start a dev server to populate.
+                  <div className="text-[12.5px] text-secondary py-6 text-center">
+                    Probing common dev ports — start a dev server to populate.
                   </div>
                 )}
               </div>

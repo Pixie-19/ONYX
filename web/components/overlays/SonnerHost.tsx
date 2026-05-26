@@ -4,9 +4,9 @@ import { Toaster } from 'sonner';
 export function SonnerHost() {
   return (
     <Toaster
-      theme="dark"
+      theme="light"
       position="bottom-right"
-      gap={8}
+      gap={10}
       visibleToasts={6}
       toastOptions={{
         duration: 5200,

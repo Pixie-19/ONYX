@@ -14,24 +14,28 @@ export default function ReplayPage() {
   return (
     <div className="h-full flex flex-col">
       <PageHeader
-        icon={<GitBranch size={14} />}
-        title="CHRONO REPLAY · TEMPORAL EXECUTION"
+        icon={<GitBranch size={16} />}
+        title="Chrono replay"
         subtitle="Causal reconstruction over append-only replay_events"
         meta={
           <>
-            <Badge tone="muted">{events.length} BUFFERED</Badge>
-            <Badge tone={demo.phase === 3 ? 'info' : 'muted'}>PHASE {demo.phase} · {demo.label}</Badge>
+            <Badge tone="muted">{events.length} buffered</Badge>
+            {demo.phase > 0 && (
+              <Badge tone="info">Phase {demo.phase} · {demo.label}</Badge>
+            )}
             <button
               onClick={() => setCinema(!cinema)}
-              className={'flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] px-3 py-1 border transition ' + (cinema ? 'text-violet-glow border-violet-glow/70 bg-violet-glow/10' : 'text-onyx-100 border-onyx-600/60 hover:border-violet-glow/60 hover:text-violet-glow')}
+              className={`btn ${cinema ? 'btn-primary' : 'btn-outline'} h-8 px-3 text-[12.5px]`}
             >
-              <Film size={11} /> {cinema ? 'EXIT CINEMA' : 'CINEMA MODE'}
+              <Film size={13} /> {cinema ? 'Exit cinema' : 'Cinema mode'}
             </button>
           </>
         }
       />
-      <div className="flex-1 min-h-0 p-3">
-        <ReplayConsole />
+      <div className="flex-1 min-h-0 p-6 surface-base">
+        <div className="h-full max-w-[1480px] mx-auto">
+          <ReplayConsole />
+        </div>
       </div>
     </div>
   );

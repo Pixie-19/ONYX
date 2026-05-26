@@ -1,17 +1,31 @@
 'use client';
 import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
-import { Layers, Filter } from 'lucide-react';
+import { Layers, Filter, Circle } from 'lucide-react';
 import { useOnyx } from '@/lib/store';
 import { PageHeader } from '@/components/shell/PageHeader';
 import { Badge } from '@/components/ui/Badge';
-import { Tooltip } from '@/components/ui/Tooltip';
 import { cn } from '@/lib/format';
-import { NODE_COLOR } from '@/lib/colors';
+
+const NODE_COLOR: Record<string, string> = {
+  file:      '#4F46E5',
+  service:   '#7C3AED',
+  endpoint:  '#10B981',
+  process:   '#F59E0B',
+  inference: '#EC4899',
+};
 
 const TopologyGraphView = dynamic(
-  () => import('@/components/topology/TopologyGraph').then((m) => m.TopologyGraphView),
-  { ssr: false, loading: () => <div className="absolute inset-0 grid place-items-center text-onyx-300 text-[10px] tracking-[0.2em] uppercase">initialising operational topology…</div> },
+  () =>
+    import('@/components/topology/TopologyGraph').then((m) => m.TopologyGraphView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="absolute inset-0 grid place-items-center text-secondary text-[12.5px]">
+        Initialising operational topology…
+      </div>
+    ),
+  },
 );
 
 export default function GraphPage() {
@@ -30,69 +44,100 @@ export default function GraphPage() {
     return [...set];
   }, [graph.nodes]);
 
-  const degraded = graph.edges.filter((e) => e.status === 'degraded' || e.status === 'offline' || e.status === 'retry').length;
+  const degraded = graph.edges.filter(
+    (e) => e.status === 'degraded' || e.status === 'offline' || e.status === 'retry',
+  ).length;
 
   return (
     <div className="h-full flex flex-col">
       <PageHeader
-        icon={<Layers size={14} />}
-        title="OPERATIONAL GRAPH"
-        subtitle="Live causal topology · ONYX_COGNITION"
+        icon={<Layers size={16} />}
+        title="Operational graph"
+        subtitle="Live causal topology · onyx_cognition"
         meta={
           <>
-            <Tooltip label="File / module nodes"><Badge tone="info" style={{ color: NODE_COLOR.file, borderColor: NODE_COLOR.file + '88' }}>FILES {counts.file}</Badge></Tooltip>
-            <Tooltip label="Service nodes"><Badge tone="info" style={{ color: NODE_COLOR.service, borderColor: NODE_COLOR.service + '88' }}>SERVICES {counts.service}</Badge></Tooltip>
-            <Tooltip label="Network endpoints"><Badge tone="info" style={{ color: NODE_COLOR.endpoint, borderColor: NODE_COLOR.endpoint + '88' }}>ENDPOINTS {counts.endpoint}</Badge></Tooltip>
-            <Tooltip label="Inference targets"><Badge tone="info" style={{ color: NODE_COLOR.inference, borderColor: NODE_COLOR.inference + '88' }}>INFERENCE {counts.inference}</Badge></Tooltip>
-            <Badge tone={degraded ? 'warn' : 'ok'}>{degraded ? `${degraded} DEGRADED` : 'ALL LINKS OK'}</Badge>
+            <KindBadge color={NODE_COLOR.file} label="Files" count={counts.file} />
+            <KindBadge color={NODE_COLOR.service} label="Services" count={counts.service} />
+            <KindBadge color={NODE_COLOR.endpoint} label="Endpoints" count={counts.endpoint} />
+            <KindBadge color={NODE_COLOR.inference} label="Inference" count={counts.inference} />
+            <Badge tone={degraded ? 'warn' : 'ok'}>
+              {degraded ? `${degraded} degraded` : 'All links healthy'}
+            </Badge>
           </>
         }
       />
 
-      <div className="relative flex-1 min-h-0">
+      <div className="relative flex-1 min-h-0 surface-base">
         <TopologyGraphView />
 
-        {/* Group filter chips */}
-        <div className="absolute top-3 left-3 panel py-2 px-3 z-10 backdrop-blur-sm">
-          <span className="bracket-top-l" />
-          <span className="bracket-top-r" />
-          <span className="bracket-bot-l" />
-          <span className="bracket-bot-r" />
-          <div className="flex items-center gap-2 mb-2">
-            <Filter size={11} className="text-cyan-glow" />
-            <span className="panel-label">GROUP FILTER</span>
+        {/* Group filter card */}
+        <div className="absolute top-4 left-4 panel py-3 px-4 z-10 max-w-[300px]">
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <Filter size={12} className="text-secondary" />
+            <span className="text-[11.5px] font-semibold text-secondary">Group</span>
           </div>
-          <div className="flex flex-wrap gap-1.5 max-w-[280px]">
-            <button
+          <div className="flex flex-wrap gap-1.5">
+            <FilterChip
+              active={groupFilter === null}
               onClick={() => setGroupFilter(null)}
-              className={cn(
-                'text-[9.5px] tracking-[0.18em] uppercase px-2 py-1 border rounded-[2px]',
-                groupFilter === null ? 'text-cyan-glow border-cyan-glow/70 bg-cyan-glow/10' : 'text-onyx-300 border-onyx-600/40 hover:border-onyx-300',
-              )}
-            >ALL</button>
+              label="All"
+            />
             {groups.map((g) => (
-              <button
+              <FilterChip
                 key={g}
+                active={groupFilter === g}
                 onClick={() => setGroupFilter(g === groupFilter ? null : g)}
-                className={cn(
-                  'text-[9.5px] tracking-[0.18em] uppercase px-2 py-1 border rounded-[2px]',
-                  groupFilter === g ? 'text-cyan-glow border-cyan-glow/70 bg-cyan-glow/10' : 'text-onyx-300 border-onyx-600/40 hover:border-onyx-300',
-                )}
-              >{g}</button>
+                label={g}
+              />
             ))}
           </div>
         </div>
 
-        {/* Inspector */}
         <NodeInspector groupFilter={groupFilter} />
       </div>
     </div>
   );
 }
 
+function FilterChip({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'text-[11.5px] font-medium px-2.5 h-[24px] rounded-full border transition',
+        active
+          ? 'border-[#4F46E5] text-white bg-[#4F46E5]'
+          : 'border-line text-secondary hover:border-strong hover:text-primary surface-raised',
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function KindBadge({ color, label, count }: { color: string; label: string; count: number }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-line surface-raised text-[12px]">
+      <Circle size={8} fill={color} stroke="none" />
+      <span className="text-secondary">{label}</span>
+      <span className="font-semibold text-primary tabular-nums">{count}</span>
+    </span>
+  );
+}
+
 function NodeInspector({ groupFilter }: { groupFilter: string | null }) {
   const graph = useOnyx((s) => s.topology);
-  const visible = groupFilter ? graph.nodes.filter((n) => n.group === groupFilter) : graph.nodes;
+  const visible = groupFilter
+    ? graph.nodes.filter((n) => n.group === groupFilter)
+    : graph.nodes;
   const top = useMemo(() => {
     return [...visible]
       .sort((a, b) => (b.pulse ?? 0) - (a.pulse ?? 0))
@@ -100,28 +145,40 @@ function NodeInspector({ groupFilter }: { groupFilter: string | null }) {
   }, [visible]);
 
   return (
-    <div className="absolute top-3 right-3 panel py-2 px-3 z-10 backdrop-blur-sm w-[300px]">
-      <span className="bracket-top-l" />
-      <span className="bracket-top-r" />
-      <span className="bracket-bot-l" />
-      <span className="bracket-bot-r" />
-      <div className="flex items-center justify-between mb-2">
-        <span className="panel-label">HOTTEST NODES</span>
-        <span className="text-[9.5px] tracking-[0.18em] uppercase text-onyx-300">{visible.length} VISIBLE</span>
+    <div className="absolute top-4 right-4 panel z-10 w-[320px]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-line">
+        <span className="text-[12.5px] font-semibold text-primary">Hottest nodes</span>
+        <span className="text-[11px] text-tertiary">{visible.length} visible</span>
       </div>
-      <div className="space-y-1 max-h-[360px] overflow-auto">
+      <div className="p-2 space-y-0.5 max-h-[400px] overflow-auto">
         {top.map((n) => (
-          <div key={n.id} className="flex items-center gap-2 text-[10.5px] font-mono">
+          <div
+            key={n.id}
+            className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-surface-sunken"
+          >
             <span
-              className="w-[6px] h-[6px] rounded-full shrink-0"
-              style={{ background: NODE_COLOR[n.kind] ?? '#22e8ff', boxShadow: `0 0 6px ${NODE_COLOR[n.kind] ?? '#22e8ff'}` }}
+              className="w-[7px] h-[7px] rounded-full shrink-0"
+              style={{ background: NODE_COLOR[n.kind] ?? '#4F46E5' }}
             />
-            <span className="text-onyx-100 truncate flex-1">{n.label}</span>
-            <Badge tone={n.health === 'critical' ? 'critical' : n.health === 'warn' ? 'warn' : 'info'} className="!py-0">{Math.round((n.pulse ?? 0) * 100)}</Badge>
+            <span className="text-[12px] text-primary truncate flex-1">{n.label}</span>
+            <span
+              className={cn(
+                'text-[11px] font-medium tabular-nums px-1.5 rounded',
+                n.health === 'critical'
+                  ? 'text-[#B91C1C] bg-[#FEF2F2]'
+                  : n.health === 'warn'
+                    ? 'text-[#B45309] bg-[#FFFBEB]'
+                    : 'text-secondary',
+              )}
+            >
+              {Math.round((n.pulse ?? 0) * 100)}
+            </span>
           </div>
         ))}
         {top.length === 0 && (
-          <div className="text-[10px] tracking-[0.18em] uppercase text-onyx-300">no nodes in selection</div>
+          <div className="px-2 py-3 text-[12px] text-secondary text-center">
+            No nodes in selection
+          </div>
         )}
       </div>
     </div>

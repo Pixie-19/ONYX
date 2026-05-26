@@ -2,9 +2,13 @@
 import { useEffect, useState } from 'react';
 import { useOnyx } from '@/lib/store';
 import { Cpu, MemoryStick, Wifi, Database, AudioWaveform, Bot } from 'lucide-react';
-import { fmtClock, fmtPct } from '@/lib/format';
-import { Badge } from '@/components/ui/Badge';
+import { fmtPct } from '@/lib/format';
 
+/**
+ * Bottom status bar — tight system summary line.
+ * Reads telemetry, network, intelligence, blackout state from the store.
+ * Calm, monospaced numerics, no flicker.
+ */
 export function StatusBar() {
   const tele = useOnyx((s) => s.telemetry);
   const network = useOnyx((s) => s.network);
@@ -16,7 +20,7 @@ export function StatusBar() {
 
   useEffect(() => {
     setClock(Date.now());
-    const id = setInterval(() => setClock(Date.now()), 173);
+    const id = setInterval(() => setClock(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -25,32 +29,66 @@ export function StatusBar() {
   const evPerMin = events.filter((e) => e.ts > Date.now() - 60_000).length;
 
   return (
-    <footer className="relative h-9 px-3 flex items-center gap-4 border-t border-onyx-600/40 bg-onyx-950/85 backdrop-blur z-10">
-      <div className="absolute inset-0 grid-bg opacity-15 pointer-events-none" />
-      <Cell icon={<Cpu size={11} />} label="CPU"  value={fmtPct(last?.cpu_load ?? 0, 1)} />
-      <Cell icon={<MemoryStick size={11} />} label="MEM" value={fmtPct(last?.mem_used_pct ?? 0, 1)} />
-      <Cell icon={<Wifi size={11} />} label="NET" value={`${recentDeg ? recentDeg + ' DEG' : 'OK'}`} sev={recentDeg ? 'warn' : 'info'} />
-      <Cell icon={<Database size={11} />} label="SQL" value={`${intel.length} EXEC`} />
-      <Cell icon={<AudioWaveform size={11} />} label="EV/MIN" value={`${evPerMin}`} />
-      <Cell icon={<Bot size={11} />} label="ROUTE" value={blackout.provider.toUpperCase()} sev={blackout.online ? 'info' : 'warn'} />
+    <footer className="relative h-9 px-4 flex items-center gap-5 border-t border-line bg-surface-raised text-[11.5px]">
+      <Cell icon={<Cpu size={11.5} />} label="CPU" value={fmtPct(last?.cpu_load ?? 0, 1)} />
+      <Cell icon={<MemoryStick size={11.5} />} label="Memory" value={fmtPct(last?.mem_used_pct ?? 0, 1)} />
+      <Cell
+        icon={<Wifi size={11.5} />}
+        label="Network"
+        value={recentDeg ? `${recentDeg} degraded` : 'Healthy'}
+        tone={recentDeg ? 'warn' : 'ok'}
+      />
+      <Cell icon={<Database size={11.5} />} label="SQL" value={`${intel.length} exec`} />
+      <Cell icon={<AudioWaveform size={11.5} />} label="Events" value={`${evPerMin}/min`} />
+      <Cell
+        icon={<Bot size={11.5} />}
+        label="Route"
+        value={blackout.provider}
+        tone={blackout.online ? 'info' : 'warn'}
+      />
 
-      <div className="ml-auto flex items-center gap-3 text-[9.5px] tracking-[0.22em] uppercase text-onyx-300">
-        <span>SESSION <span className="text-onyx-100">{session ?? '——'}</span></span>
-        <span className="text-onyx-100 font-mono tabular-nums" suppressHydrationWarning>
-          {clock === null ? '——:——:——.———' : fmtClock(clock)}
+      <div className="ml-auto flex items-center gap-4 text-[11.5px] text-tertiary">
+        <span>
+          Session <span className="text-secondary tabular-nums">{session ?? '—'}</span>
         </span>
-        <span className="flex items-center gap-1.5"><span className="heartbeat" />NOMINAL</span>
+        <span className="text-secondary tabular-nums" suppressHydrationWarning>
+          {clock === null
+            ? '—:—:—'
+            : new Date(clock).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="heartbeat" />
+          <span className="text-secondary">Operational</span>
+        </span>
       </div>
     </footer>
   );
 }
 
-function Cell({ icon, label, value, sev = 'info' as 'info' | 'warn' | 'error' | 'critical' | 'ok' }: { icon: React.ReactNode; label: string; value: string; sev?: 'info' | 'warn' | 'error' | 'critical' | 'ok' }) {
+function Cell({
+  icon,
+  label,
+  value,
+  tone = 'info',
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  tone?: 'info' | 'warn' | 'error' | 'ok';
+}) {
+  const toneClass =
+    tone === 'ok'
+      ? 'text-[#047857] dark:text-emerald-300'
+      : tone === 'warn'
+        ? 'text-[#B45309] dark:text-amber-300'
+        : tone === 'error'
+          ? 'text-[#B91C1C] dark:text-red-300'
+          : 'text-primary';
   return (
-    <div className="flex items-center gap-1.5 relative">
-      <span className="text-onyx-300">{icon}</span>
-      <span className="text-[9px] tracking-[0.22em] uppercase text-onyx-300">{label}</span>
-      <Badge tone={sev} className="!py-0 !text-[9.5px]">{value}</Badge>
+    <div className="flex items-center gap-1.5">
+      <span className="text-tertiary">{icon}</span>
+      <span className="text-tertiary">{label}</span>
+      <span className={`tabular-nums font-medium ${toneClass}`}>{value}</span>
     </div>
   );
 }

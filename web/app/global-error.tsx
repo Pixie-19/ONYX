@@ -2,53 +2,80 @@
 
 export const dynamic = 'force-dynamic';
 
-export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   return (
     <html lang="en">
-      <body style={{
-        margin: 0,
-        height: '100vh',
-        background: '#040608',
-        color: '#c9d5e3',
-        fontFamily: 'JetBrains Mono, SF Mono, Consolas, monospace',
-        display: 'grid',
-        placeItems: 'center',
-        padding: 40,
-      }}>
-        <div style={{ textAlign: 'center', maxWidth: 540 }}>
-          <div style={{ fontSize: 48, letterSpacing: '0.32em', color: '#22e8ff', textShadow: '0 0 8px #22e8ff' }}>
-            ONYX
+      <body
+        style={{
+          margin: 0,
+          height: '100vh',
+          background: '#F7F8FA',
+          color: '#111827',
+          fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+          display: 'grid',
+          placeItems: 'center',
+          padding: 40,
+        }}
+      >
+        <div
+          style={{
+            textAlign: 'center',
+            maxWidth: 540,
+            background: '#FFFFFF',
+            border: '1px solid #E7EAF0',
+            borderRadius: 12,
+            padding: 32,
+            boxShadow: '0 1px 2px rgba(17, 24, 39, 0.04), 0 12px 32px -12px rgba(17, 24, 39, 0.12)',
+          }}
+        >
+          <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.015em', color: '#111827' }}>
+            Unrecoverable exception
           </div>
-          <div style={{ fontSize: 10, letterSpacing: '0.32em', textTransform: 'uppercase', color: '#7a8a9c', marginTop: 6 }}>
-            UNRECOVERABLE EXCEPTION
+          <div style={{ fontSize: 13, color: '#6B7280', marginTop: 6 }}>
+            ONYX hit a fatal error that prevented the application from rendering.
           </div>
-          <div style={{
-            marginTop: 20,
-            padding: 12,
-            border: '1px solid rgba(255, 93, 111, 0.5)',
-            background: 'rgba(255, 93, 111, 0.06)',
-            color: '#ff5d6f',
-            fontSize: 11,
-            textAlign: 'left',
-            wordBreak: 'break-word',
-          }}>
+          <div
+            style={{
+              marginTop: 20,
+              padding: 12,
+              border: '1px solid #FCA5A5',
+              background: '#FEF2F2',
+              color: '#B91C1C',
+              fontSize: 12,
+              textAlign: 'left',
+              wordBreak: 'break-word',
+              borderRadius: 8,
+              fontFamily: 'JetBrains Mono, ui-monospace, SFMono-Regular, monospace',
+            }}
+          >
             {error.message ?? 'Unknown error'}
-            {error.digest && <div style={{ marginTop: 6, opacity: 0.7 }}>DIGEST · {error.digest}</div>}
+            {error.digest && (
+              <div style={{ marginTop: 6, opacity: 0.7 }}>Digest · {error.digest}</div>
+            )}
           </div>
           <button
             onClick={() => reset()}
             style={{
-              marginTop: 16,
-              padding: '6px 14px',
-              fontSize: 10,
-              letterSpacing: '0.22em',
-              textTransform: 'uppercase',
-              background: 'transparent',
-              border: '1px solid rgba(34, 232, 255, 0.6)',
-              color: '#22e8ff',
+              marginTop: 20,
+              padding: '8px 14px',
+              fontSize: 13,
+              fontWeight: 500,
+              letterSpacing: '-0.005em',
+              background: '#111827',
+              border: '1px solid #111827',
+              color: '#FFFFFF',
               cursor: 'pointer',
+              borderRadius: 7,
             }}
-          >RESET STATE</button>
+          >
+            Reset application
+          </button>
         </div>
       </body>
     </html>

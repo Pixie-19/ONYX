@@ -12,18 +12,36 @@ interface Props {
   className?: string;
 }
 
-/** Per-route page header — short uppercase title, slim subtitle, right meta strip. */
+/**
+ * Per-route page header — large, calm title with a quiet subtitle and an
+ * optional right-side meta strip (status pills, counters, action buttons).
+ */
 export function PageHeader({ icon, title, subtitle, meta, className }: Props) {
   return (
-    <header className={cn('px-4 py-3 border-b border-onyx-600/30 flex items-center gap-3 bg-onyx-950/40 backdrop-blur', className)}>
-      {icon && <span className="text-cyan-glow">{icon}</span>}
-      <div className="flex items-baseline gap-3 min-w-0">
-        <h1 className="text-[13px] font-display tracking-[0.32em] uppercase text-onyx-100 glow-cyan truncate">{title}</h1>
+    <header
+      className={cn(
+        'px-6 py-5 border-b border-line flex items-center gap-4 bg-surface-raised',
+        className,
+      )}
+    >
+      {icon && (
+        <div className="w-9 h-9 rounded-lg surface-sunken flex items-center justify-center text-primary shrink-0">
+          {icon}
+        </div>
+      )}
+      <div className="flex flex-col min-w-0">
+        <h1 className="text-[18px] font-semibold tracking-tight text-primary leading-tight truncate">
+          {title}
+        </h1>
         {subtitle && (
-          <p className="text-[10.5px] tracking-[0.18em] uppercase text-onyx-300 truncate">{subtitle}</p>
+          <p className="text-[12.5px] text-secondary mt-0.5 truncate">{subtitle}</p>
         )}
       </div>
-      {meta && <div className="ml-auto flex items-center gap-2">{meta}</div>}
+      {meta && (
+        <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+          {meta}
+        </div>
+      )}
     </header>
   );
 }

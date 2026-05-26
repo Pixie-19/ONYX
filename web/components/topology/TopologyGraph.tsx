@@ -108,7 +108,16 @@ function GraphNode({ node, position }: NodeProps) {
           position={[0, baseScale * 2.6, 0]}
           style={{ pointerEvents: 'none' }}
         >
-          <div className="text-[9px] font-mono tracking-[0.18em] uppercase text-onyx-100 px-1 py-[1px] bg-onyx-950/70 border border-onyx-600/40 rounded-[2px] whitespace-nowrap">
+          <div
+            className="text-[10.5px] font-medium px-1.5 py-0.5 rounded whitespace-nowrap"
+            style={{
+              color: '#111827',
+              background: 'rgba(255, 255, 255, 0.92)',
+              border: '1px solid rgba(17, 24, 39, 0.08)',
+              backdropFilter: 'blur(4px)',
+              boxShadow: '0 1px 2px rgba(17, 24, 39, 0.06)',
+            }}
+          >
             {node.label}
           </div>
         </Html>
@@ -205,27 +214,27 @@ function Scene({ graph }: { graph: TopologyGraph }) {
 
   return (
     <>
-      <color attach="background" args={['#040608']} />
-      <ambientLight intensity={0.4} />
-      <pointLight position={[10, 10, 10]} intensity={0.4} color="#22e8ff" />
-      <pointLight position={[-10, -8, -10]} intensity={0.3} color="#9b6cff" />
+      <color attach="background" args={['#F7F8FA']} />
+      <ambientLight intensity={0.85} />
+      <pointLight position={[10, 10, 10]} intensity={0.35} color="#4F46E5" />
+      <pointLight position={[-10, -8, -10]} intensity={0.25} color="#7C3AED" />
 
       {/* concentric reference rings */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[3.8, 3.83, 96]} />
-        <meshBasicMaterial color="#1a2230" transparent opacity={0.5} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#D9DEE6" transparent opacity={0.55} side={THREE.DoubleSide} />
       </mesh>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[6, 6.03, 96]} />
-        <meshBasicMaterial color="#1a2230" transparent opacity={0.35} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#D9DEE6" transparent opacity={0.4} side={THREE.DoubleSide} />
       </mesh>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[9.2, 9.23, 96]} />
-        <meshBasicMaterial color="#1a2230" transparent opacity={0.25} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#D9DEE6" transparent opacity={0.3} side={THREE.DoubleSide} />
       </mesh>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[12.2, 12.23, 96]} />
-        <meshBasicMaterial color="#1a2230" transparent opacity={0.18} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#D9DEE6" transparent opacity={0.22} side={THREE.DoubleSide} />
       </mesh>
 
       {/* edges */}
@@ -274,27 +283,7 @@ export function TopologyGraphView() {
 }
 
 function TopologyOverlay() {
-  const graph = useOnyx((s) => s.topology);
-  const counts = useMemo(() => {
-    const c = { file: 0, service: 0, endpoint: 0, inference: 0, process: 0 } as Record<string, number>;
-    for (const n of graph.nodes) c[n.kind] = (c[n.kind] ?? 0) + 1;
-    return c;
-  }, [graph.nodes]);
-
-  return (
-    <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none">
-      <div className="space-y-1">
-        <div className="panel-label">OPERATIONAL TOPOLOGY · ONYX_COGNITION</div>
-        <div className="text-[10px] tracking-[0.18em] uppercase text-onyx-300">
-          {graph.nodes.length} NODES · {graph.edges.length} EDGES
-        </div>
-      </div>
-      <div className="flex gap-3 text-[10px] tracking-[0.18em] uppercase">
-        <span style={{ color: NODE_COLOR.file }}>FILES {counts.file ?? 0}</span>
-        <span style={{ color: NODE_COLOR.service }}>SERVICES {counts.service ?? 0}</span>
-        <span style={{ color: NODE_COLOR.endpoint }}>ENDPOINTS {counts.endpoint ?? 0}</span>
-        <span style={{ color: NODE_COLOR.inference }}>INFERENCE {counts.inference ?? 0}</span>
-      </div>
-    </div>
-  );
+  // The Graph page now renders its own filter + inspector panels above the
+  // canvas — keep this overlay minimal so we don't double up.
+  return null;
 }

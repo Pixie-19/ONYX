@@ -32,61 +32,63 @@ export default function SettingsPage() {
   return (
     <div className="h-full flex flex-col">
       <PageHeader
-        icon={<Settings size={14} />}
-        title="SYSTEM SETTINGS"
+        icon={<Settings size={16} />}
+        title="Settings"
         subtitle="Runtime configuration · providers · environment"
         meta={
           <>
-            <Badge tone={connected ? 'ok' : 'error'}>{connected ? 'AGENT · LINKED' : 'AGENT · OFFLINE'}</Badge>
-            <Badge tone="muted">SESSION · {session ?? '——'}</Badge>
-            <Badge tone="muted">UPTIME · {health?.uptime_s ?? '—'}s</Badge>
+            <Badge tone={connected ? 'ok' : 'error'}>
+              {connected ? 'Agent linked' : 'Agent offline'}
+            </Badge>
+            <Badge tone="muted">Session · {session ?? '—'}</Badge>
+            <Badge tone="muted">Uptime · {health?.uptime_s ?? '—'}s</Badge>
           </>
         }
       />
 
-      <div className="flex-1 min-h-0 p-3 grid grid-cols-12 gap-3 overflow-auto auto-rows-min">
-        <Panel title="ENDPOINTS" className="col-span-6">
-          <div className="space-y-2 font-mono text-[11px]">
-            <Row label="AGENT HTTP"   value={ONYX_HTTP} />
-            <Row label="AGENT WS"     value={(process.env.NEXT_PUBLIC_ONYX_AGENT_WS ?? 'ws://127.0.0.1:4311/stream')} />
-            <Row label="COCKPIT"      value="http://127.0.0.1:3000" />
-            <Row label="HEALTH"       value={`${ONYX_HTTP}/health`} link />
-            <Row label="REPLAY API"   value={`${ONYX_HTTP}/replay/window`} link />
-            <Row label="DEMO API"     value={`${ONYX_HTTP}/demo/inject`} />
+      <div className="flex-1 min-h-0 p-6 grid grid-cols-12 gap-4 overflow-auto auto-rows-min surface-base">
+        <Panel title="Endpoints" className="col-span-6">
+          <div>
+            <Row label="Agent HTTP" value={ONYX_HTTP} />
+            <Row label="Agent WS" value={process.env.NEXT_PUBLIC_ONYX_AGENT_WS ?? 'ws://127.0.0.1:4311/stream'} />
+            <Row label="Cockpit" value="http://127.0.0.1:3000" />
+            <Row label="Health" value={`${ONYX_HTTP}/health`} link />
+            <Row label="Replay API" value={`${ONYX_HTTP}/replay/window`} link />
+            <Row label="Demo API" value={`${ONYX_HTTP}/demo/inject`} />
           </div>
         </Panel>
 
-        <Panel title="INFERENCE PROVIDERS" className="col-span-6">
-          <div className="space-y-2 font-mono text-[11px]">
-            <Row label="ACTIVE"     value={blackout.provider.toUpperCase()} tone={blackout.online ? 'info' : 'warn'} />
-            <Row label="ONLINE"     value={blackout.online ? 'TRUE' : 'FALSE'} tone={blackout.online ? 'ok' : 'critical'} />
-            <Row label="MISTRAL"    value="codestral-latest" />
-            <Row label="OLLAMA"     value="open-codestral-7b @ 127.0.0.1:11434" />
-            <Row label="CACHE"      value="deterministic fallback" />
-            <Row label="LAST REASON" value={blackout.reason} tone="muted" />
+        <Panel title="Inference providers" className="col-span-6">
+          <div>
+            <Row label="Active" value={blackout.provider} tone={blackout.online ? 'info' : 'warn'} />
+            <Row label="Online" value={blackout.online ? 'true' : 'false'} tone={blackout.online ? 'ok' : 'critical'} />
+            <Row label="Mistral" value="codestral-latest" />
+            <Row label="Ollama" value="open-codestral-7b @ 127.0.0.1:11434" />
+            <Row label="Cache" value="deterministic fallback" />
+            <Row label="Last reason" value={blackout.reason} />
           </div>
         </Panel>
 
-        <Panel title="CORAL SOURCE" className="col-span-6">
-          <div className="space-y-2 font-mono text-[11px]">
-            <Row label="NAME"       value="onyx_cognition" />
-            <Row label="NAMESPACE"  value="onyx" />
-            <Row label="TRANSPORT"  value="mcp · stdio" />
-            <Row label="INGESTION"  value="streaming · jsonl" />
-            <Row label="TABLES"     value="6" tone="info" />
+        <Panel title="Coral source" className="col-span-6">
+          <div>
+            <Row label="Name" value="onyx_cognition" />
+            <Row label="Namespace" value="onyx" />
+            <Row label="Transport" value="mcp · stdio" />
+            <Row label="Ingestion" value="streaming · jsonl" />
+            <Row label="Tables" value="6" tone="info" />
           </div>
-          <div className="mt-3 text-[10px] tracking-[0.18em] uppercase text-onyx-300">
-            See <code className="text-cyan-glow font-mono">coral/manifest.yaml</code> for the full spec.
+          <div className="mt-4 text-[12px] text-secondary">
+            See <code className="text-[#4F46E5] font-mono">coral/manifest.yaml</code> for the full spec.
           </div>
         </Panel>
 
-        <Panel title="KEYBINDS" className="col-span-6">
-          <div className="space-y-1.5 font-mono text-[11px]">
-            <Kbd k="⌘K / Ctrl+K" v="Open command palette" />
-            <Kbd k="D"             v="Run cinematic 4-phase cascade" />
-            <Kbd k="B"             v="Toggle blackout protocol" />
-            <Kbd k="C"             v="Toggle cinema replay mode" />
-            <Kbd k="Esc"           v="Close palette / overlay" />
+        <Panel title="Keybinds" className="col-span-6">
+          <div className="space-y-1">
+            <Kbd k="⌘K / Ctrl K" v="Open command palette" />
+            <Kbd k="D" v="Run cinematic 4-phase cascade" />
+            <Kbd k="B" v="Toggle blackout protocol" />
+            <Kbd k="C" v="Toggle cinema replay mode" />
+            <Kbd k="Esc" v="Close palette or overlay" />
           </div>
         </Panel>
       </div>
@@ -94,19 +96,34 @@ export default function SettingsPage() {
   );
 }
 
-function Row({ label, value, tone, link }: { label: string; value: string; tone?: 'info' | 'warn' | 'error' | 'critical' | 'ok' | 'muted'; link?: boolean }) {
+function Row({
+  label,
+  value,
+  tone,
+  link,
+}: {
+  label: string;
+  value: string;
+  tone?: 'info' | 'warn' | 'error' | 'critical' | 'ok' | 'muted';
+  link?: boolean;
+}) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-onyx-300 tracking-[0.18em] uppercase text-[10px]">{label}</span>
+    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-subtle last:border-b-0">
+      <span className="text-[12px] text-secondary">{label}</span>
       {link ? (
-        <a href={value} target="_blank" rel="noreferrer" className="text-cyan-glow hover:text-cyan-glow/80 flex items-center gap-1 truncate">
-          <span className="truncate max-w-[280px]">{value}</span>
-          <ExternalLink size={10} />
+        <a
+          href={value}
+          target="_blank"
+          rel="noreferrer"
+          className="text-[12.5px] text-[#4F46E5] dark:text-indigo-300 hover:underline flex items-center gap-1 truncate max-w-[60%]"
+        >
+          <span className="truncate font-mono">{value}</span>
+          <ExternalLink size={11} className="shrink-0" />
         </a>
       ) : tone ? (
         <Badge tone={tone}>{value}</Badge>
       ) : (
-        <span className="text-onyx-100 truncate max-w-[320px]">{value}</span>
+        <span className="text-[12.5px] text-primary font-mono truncate max-w-[60%]">{value}</span>
       )}
     </div>
   );
@@ -114,9 +131,9 @@ function Row({ label, value, tone, link }: { label: string; value: string; tone?
 
 function Kbd({ k, v }: { k: string; v: string }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-[10px] tracking-[0.18em] uppercase text-onyx-100 px-2 py-0.5 border border-onyx-600/40 bg-onyx-900/60 min-w-[80px] text-center">{k}</span>
-      <span className="text-onyx-300">{v}</span>
+    <div className="flex items-center gap-3 py-2 border-b border-subtle last:border-b-0">
+      <span className="kbd min-w-[100px] text-center">{k}</span>
+      <span className="text-[12.5px] text-secondary">{v}</span>
     </div>
   );
 }

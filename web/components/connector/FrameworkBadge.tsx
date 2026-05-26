@@ -7,9 +7,9 @@ export function FrameworkBadge({ framework }: { framework: Framework | null }) {
   const meta = FRAMEWORK_META[framework ?? 'unknown'];
   return (
     <Badge
-      tone="info"
-      className="!text-[10px]"
-      style={{ color: meta.color, borderColor: meta.color + '88', boxShadow: `0 0 8px ${meta.color}33` }}
+      tone="muted"
+      className="!text-[10.5px]"
+      style={{ color: meta.color, borderColor: meta.color + '40' }}
     >
       {meta.label}
     </Badge>

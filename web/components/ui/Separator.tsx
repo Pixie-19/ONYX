@@ -1,19 +1,20 @@
 import * as React from 'react';
 import { cn } from '@/lib/format';
 
-export const Separator = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & { orientation?: 'horizontal' | 'vertical' }>(
-  ({ className, orientation = 'horizontal', ...props }, ref) => (
-    <div
-      ref={ref}
-      role="separator"
-      aria-orientation={orientation}
-      className={cn(
-        'shrink-0 bg-onyx-600/30',
-        orientation === 'horizontal' ? 'h-px w-full' : 'h-full w-px',
-        className,
-      )}
-      {...props}
-    />
-  ),
-);
+export const Separator = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { orientation?: 'horizontal' | 'vertical' }
+>(({ className, orientation = 'horizontal', ...props }, ref) => (
+  <div
+    ref={ref}
+    role="separator"
+    aria-orientation={orientation}
+    className={cn(
+      'shrink-0 bg-line',
+      orientation === 'horizontal' ? 'h-px w-full' : 'h-full w-px',
+      className,
+    )}
+    {...props}
+  />
+));
 Separator.displayName = 'Separator';

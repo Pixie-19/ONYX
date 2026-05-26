@@ -3,17 +3,24 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/format';
 
+/**
+ * Badge — semantic pill used everywhere across ONYX.
+ * Tones map to the muted, premium palette from globals.css `.pill` rules,
+ * but the actual visual is implemented locally for finer control.
+ *
+ * API preserved exactly: tone / dot / children / className / standard HTML attrs.
+ */
 const badgeVariants = cva(
-  'inline-flex items-center gap-1.5 px-2 py-[2px] text-[10px] font-mono uppercase tracking-[0.18em] border rounded-[2px] select-none',
+  'inline-flex items-center gap-1.5 px-2 h-[20px] text-[11px] font-medium tracking-tight border rounded-full select-none whitespace-nowrap leading-none',
   {
     variants: {
       tone: {
-        info:     'text-signal-info     border-signal-info/55     bg-signal-info/[0.06]',
-        warn:     'text-signal-warn     border-signal-warn/55     bg-signal-warn/[0.06]',
-        error:    'text-signal-error    border-signal-error/55    bg-signal-error/[0.06]',
-        critical: 'text-signal-critical border-signal-critical/70 bg-signal-critical/[0.08] animate-pulse-slow',
-        ok:       'text-signal-ok       border-signal-ok/55       bg-signal-ok/[0.06]',
-        muted:    'text-onyx-300        border-onyx-600/40        bg-onyx-700/30',
+        info:     'text-[#4338CA] border-[#C7D2FE] bg-[#EEF2FF] dark:text-indigo-200 dark:border-indigo-400/30 dark:bg-indigo-400/10',
+        warn:     'text-[#B45309] border-[#FCD34D] bg-[#FFFBEB] dark:text-amber-200 dark:border-amber-400/30 dark:bg-amber-400/10',
+        error:    'text-[#B91C1C] border-[#FCA5A5] bg-[#FEF2F2] dark:text-red-200 dark:border-red-400/30 dark:bg-red-400/10',
+        critical: 'text-[#991B1B] border-[#F87171] bg-[#FEE2E2] dark:text-red-200 dark:border-red-400/40 dark:bg-red-500/15 animate-pulse-slow',
+        ok:       'text-[#047857] border-[#A7F3D0] bg-[#ECFDF5] dark:text-emerald-200 dark:border-emerald-400/30 dark:bg-emerald-400/10',
+        muted:    'text-secondary border-line bg-surface-sunken',
       },
       dot: {
         true:  '',
@@ -33,11 +40,11 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
     <span ref={ref} className={cn(badgeVariants({ tone, dot }), className)} {...props}>
       {dot && (
         <span
-          className="w-[5px] h-[5px] rounded-full"
-          style={{ background: 'currentColor', boxShadow: '0 0 6px currentColor' }}
+          className="w-[6px] h-[6px] rounded-full"
+          style={{ background: 'currentColor', opacity: 0.85 }}
         />
       )}
-      {children}
+      <span className="truncate">{children}</span>
     </span>
   ),
 );
