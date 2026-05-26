@@ -113,7 +113,6 @@ export function Sidebar({ collapsed, onToggle }: Props) {
                   const count = counts[s.key] ?? 0;
                   const link = (
                     <Link
-                      key={s.key}
                       href={s.href}
                       className={cn(
                         'rail-item',

@@ -1,11 +1,12 @@
 'use client';
-import { useMemo, useRef } from 'react';
+import { memo, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Line, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useOnyx } from '@/lib/store';
 import { NODE_COLOR, EDGE_COLOR, STATUS_COLOR } from '@/lib/colors';
 import type { TopologyEdge, TopologyNode, TopologyGraph } from '@/lib/types';
+import { shallow } from 'zustand/shallow';
 
 // Deterministic 3D placement: group nodes onto concentric rings by `group`,
 // hash-spread within each ring. Adding/removing nodes does not jitter neighbours.
@@ -69,7 +70,7 @@ interface NodeProps {
   position: [number, number, number];
 }
 
-function GraphNode({ node, position }: NodeProps) {
+const GraphNode = memo(function GraphNode({ node, position }: NodeProps) {
   const ref = useRef<THREE.Mesh>(null!);
   const ringRef = useRef<THREE.Mesh>(null!);
   const color = useMemo(() => new THREE.Color(colorForNode(node)), [node.health, node.kind]);
@@ -124,7 +125,7 @@ function GraphNode({ node, position }: NodeProps) {
       )}
     </group>
   );
-}
+});
 
 interface EdgeProps {
   edge: TopologyEdge;
@@ -132,7 +133,7 @@ interface EdgeProps {
   to: [number, number, number];
 }
 
-function GraphEdge({ edge, from, to }: EdgeProps) {
+const GraphEdge = memo(function GraphEdge({ edge, from, to }: EdgeProps) {
   const color = edge.status === 'offline' ? STATUS_COLOR.offline
     : edge.status === 'degraded' || edge.status === 'retry' ? STATUS_COLOR.degraded
     : EDGE_COLOR[edge.kind] ?? '#22e8ff';
@@ -159,7 +160,7 @@ function GraphEdge({ edge, from, to }: EdgeProps) {
       gapSize={0.18}
     />
   );
-}
+});
 
 function TraversalParticles({ edges, positions }: { edges: TopologyEdge[]; positions: Map<string, [number, number, number]> }) {
   // a subtle particle drift along edges — adds 'movement' even when the graph
@@ -196,7 +197,7 @@ function TraversalParticles({ edges, positions }: { edges: TopologyEdge[]; posit
   return (
     <>
       {particles.map(({ e }, i) => (
-        <mesh ref={(el) => { refs.current[i] = el; }} key={i}>
+        <mesh ref={(el) => { refs.current[i] = el; }} key={`${e.source}-${e.target}-${i}`}>
           <sphereGeometry args={[0.05, 8, 8]} />
           <meshBasicMaterial color={EDGE_COLOR[e.kind] ?? '#22e8ff'} toneMapped={false} />
         </mesh>
@@ -205,12 +206,12 @@ function TraversalParticles({ edges, positions }: { edges: TopologyEdge[]; posit
   );
 }
 
-function Scene({ graph }: { graph: TopologyGraph }) {
+function Scene({ graph, version }: { graph: TopologyGraph; version: number }) {
   const positions = useMemo(() => {
     const m = new Map<string, [number, number, number]>();
     for (const n of graph.nodes) m.set(n.id, positionFor(n));
     return m;
-  }, [graph.nodes.map((n) => n.id).join('|')]);
+  }, [version]);
 
   return (
     <>
@@ -267,7 +268,10 @@ function Scene({ graph }: { graph: TopologyGraph }) {
 }
 
 export function TopologyGraphView() {
-  const graph = useOnyx((s) => s.topology);
+  const { graph, version } = useOnyx(
+    (s) => ({ graph: s.topology, version: s.topologyVersion }),
+    shallow,
+  );
   return (
     <div className="absolute inset-0">
       <Canvas
@@ -275,7 +279,7 @@ export function TopologyGraphView() {
         dpr={[1, 1.7]}
         gl={{ antialias: true, alpha: true }}
       >
-        <Scene graph={graph} />
+        <Scene graph={graph} version={version} />
       </Canvas>
       <TopologyOverlay />
     </div>

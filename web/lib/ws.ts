@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { useOnyx } from './store';
-import type { WSMessage } from './types';
+import type { WSMessage, TopologyGraph } from './types';
 
 const WS_URL = process.env.NEXT_PUBLIC_ONYX_AGENT_WS ?? 'ws://127.0.0.1:4311/stream';
 
@@ -15,9 +15,30 @@ export function useOnyxStream(): void {
     if (mounted.current) return;
     mounted.current = true;
 
+    let pendingTopology: TopologyGraph | null = null;
+    let flushScheduled = false;
+
     let ws: WebSocket | null = null;
     let stop = false;
     let attempt = 0;
+
+    const flushTopology = () => {
+      if (!pendingTopology) return;
+      useOnyx.getState().ingestTopology(pendingTopology);
+      pendingTopology = null;
+      flushScheduled = false;
+    };
+
+    const scheduleTopologyFlush = (g: TopologyGraph) => {
+      pendingTopology = g;
+      if (flushScheduled) return;
+      flushScheduled = true;
+      if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
+        window.requestAnimationFrame(flushTopology);
+      } else {
+        setTimeout(flushTopology, 16);
+      }
+    };
 
     const connect = () => {
       if (stop) return;
@@ -44,7 +65,7 @@ export function useOnyxStream(): void {
           case 'telemetry':          s.ingestTelemetry(msg.payload); break;
           case 'network':            s.ingestNetwork(msg.payload); break;
           case 'workspace':          s.ingestWorkspace(msg.payload); break;
-          case 'topology':           s.ingestTopology(msg.payload); break;
+          case 'topology':           scheduleTopologyFlush(msg.payload); break;
           case 'intelligence':       s.ingestIntelligence(msg.payload); break;
           case 'rule':               s.ingestRule(msg.payload); break;
           case 'analyst':            s.ingestAnalyst(msg.payload); break;
@@ -62,6 +83,10 @@ export function useOnyxStream(): void {
     };
 
     connect();
-    return () => { stop = true; ws?.close(); };
+    return () => {
+      stop = true;
+      pendingTopology = null;
+      ws?.close();
+    };
   }, []);
 }

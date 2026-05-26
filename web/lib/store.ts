@@ -17,6 +17,7 @@ import type {
   TerminalSession,
   TerminalChunk,
 } from './types';
+import { normalizeTopologyGraph } from './topology-normalize';
 
 interface AnalystLine {
   id: string;
@@ -35,6 +36,8 @@ interface ONYXState {
   network: NetworkTrajectoryRow[];
   workspace: WorkspaceEntropyRow[];
   topology: TopologyGraph;
+  topologyHash: string;
+  topologyVersion: number;
   intelligence: IntelligenceRow[];
   rules: RulebookRow[];
   analyst: AnalystLine[];
@@ -99,6 +102,8 @@ export const useOnyx = create<ONYXState>()(
     network: [],
     workspace: [],
     topology: { ts: 0, nodes: [], edges: [] },
+    topologyHash: 'boot',
+    topologyVersion: 0,
     intelligence: [],
     rules: [],
     analyst: [],
@@ -127,7 +132,15 @@ export const useOnyx = create<ONYXState>()(
     ingestTelemetry: (row) => set((s) => ({ telemetry: RING(180)(s.telemetry, row) })),
     ingestNetwork: (row) => set((s) => ({ network: RING(240)(s.network, row) })),
     ingestWorkspace: (row) => set((s) => ({ workspace: RING(180)(s.workspace, row) })),
-    ingestTopology: (g) => set({ topology: g }),
+    ingestTopology: (g) => set((s) => {
+      const { graph, hash } = normalizeTopologyGraph(g);
+      if (hash === s.topologyHash) return s;
+      return {
+        topology: graph,
+        topologyHash: hash,
+        topologyVersion: s.topologyVersion + 1,
+      };
+    }),
     ingestIntelligence: (i) => set((s) => ({ intelligence: RING(40)(s.intelligence, i) })),
     ingestRule: (r) => set((s) => ({ rules: RING(80)(s.rules, r) })),
     ingestAnalyst: (a) => set((s) => ({ analyst: RING(40)(s.analyst, a) })),

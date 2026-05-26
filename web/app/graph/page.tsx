@@ -6,6 +6,7 @@ import { useOnyx } from '@/lib/store';
 import { PageHeader } from '@/components/shell/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/format';
+import { GraphErrorBoundary } from '@/components/topology/GraphErrorBoundary';
 
 const NODE_COLOR: Record<string, string> = {
   file:      '#4F46E5',
@@ -31,6 +32,7 @@ const TopologyGraphView = dynamic(
 export default function GraphPage() {
   const graph = useOnyx((s) => s.topology);
   const [groupFilter, setGroupFilter] = useState<string | null>(null);
+  const [graphReset, setGraphReset] = useState(0);
 
   const counts = useMemo(() => {
     const c = { file: 0, service: 0, endpoint: 0, inference: 0, process: 0 } as Record<string, number>;
@@ -68,7 +70,9 @@ export default function GraphPage() {
       />
 
       <div className="relative flex-1 min-h-0 surface-base">
-        <TopologyGraphView />
+        <GraphErrorBoundary resetKey={graphReset} onRetry={() => setGraphReset((v) => v + 1)}>
+          <TopologyGraphView key={graphReset} />
+        </GraphErrorBoundary>
 
         {/* Group filter card */}
         <div className="absolute top-4 left-4 panel py-3 px-4 z-10 max-w-[300px]">
