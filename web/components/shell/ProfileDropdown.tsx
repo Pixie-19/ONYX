@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,6 +26,9 @@ export function ProfileDropdown() {
   const githubConnection = useOnyx((s) => s.githubConnection);
   const blackout = useOnyx((s) => s.blackout);
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const userName = authSession?.user.name || session || 'Anonymous';
   const userEmail = authSession?.user.email || undefined;
   const avatarUrl = authSession?.user.github_avatar_url || undefined;
@@ -47,7 +50,7 @@ export function ProfileDropdown() {
   return (
     <>
       {/* Avatar button */}
-      <Tooltip label={`Session · ${session ?? '—'}`} side="bottom">
+      <Tooltip label={`Session · ${mounted ? (session ?? '—') : '—'}`} side="bottom">
         <button
           onClick={() => setOpen(!open)}
           className={cn(
@@ -55,9 +58,11 @@ export function ProfileDropdown() {
             open ? 'bg-surface-inset ring-1 ring-primary' : 'bg-surface-sunken hover:bg-surface-inset',
           )}
           aria-label="profile"
-          suppressHydrationWarning
         >
-          {avatarUrl ? (
+          {/* Deterministic loading fallback until client session is confirmed */}
+          {!mounted ? (
+            <div className="w-full h-full bg-surface-sunken animate-pulse rounded-full" />
+          ) : avatarUrl ? (
             <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
           ) : (
             <User size={14} className="text-secondary" />

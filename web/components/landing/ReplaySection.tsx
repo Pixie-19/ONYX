@@ -43,7 +43,7 @@ export function ReplaySection() {
                   transition={{ delay: i * 0.15, duration: 0.5 }}
                   className={`relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-12 ${isEven ? 'md:flex-row-reverse' : ''}`}
                 >
-                  <div className={`flex-1 w-full md:text-${isEven ? 'left' : 'right'} pl-16 md:pl-0`}>
+                  <div className={`flex-1 w-full ${isEven ? 'md:text-left' : 'md:text-right'} pl-16 md:pl-0`}>
                     <div className="p-5 bg-surface-base border border-line rounded-xl shadow-sm hover:shadow-card hover:border-strong transition-all duration-300">
                       <div className="flex items-center gap-3 mb-2 justify-start md:justify-start">
                          <span className="text-[12px] font-mono text-tertiary bg-surface-sunken px-2 py-1 rounded-md">{event.time}</span>

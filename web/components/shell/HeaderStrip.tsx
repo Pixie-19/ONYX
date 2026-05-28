@@ -32,7 +32,9 @@ export function HeaderStrip() {
   const active = workspaces.find((w) => w.id === activeId);
 
   const [clock, setClock] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    setMounted(true);
     setClock(Date.now());
     const id = setInterval(() => setClock(Date.now()), 1000);
     return () => clearInterval(id);
@@ -88,7 +90,6 @@ export function HeaderStrip() {
       <button
         onClick={() => setCommandOpen(true)}
         className="flex items-center gap-2 px-3 h-9 rounded-md border border-line bg-surface-base hover:bg-surface-sunken transition min-w-[260px] max-w-[420px] flex-1"
-        suppressHydrationWarning
       >
         <Search size={14} className="text-tertiary" />
         <span className="text-[12.5px] text-tertiary flex-1 text-left truncate">
@@ -159,31 +160,31 @@ export function HeaderStrip() {
           </span>
         </Tooltip>
 
-        <span className="hidden xl:inline text-[11.5px] text-tertiary tabular-nums" suppressHydrationWarning>
-          {clock === null ? '—:—:—' : new Date(clock).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+        <span className="hidden xl:inline text-[11.5px] text-tertiary tabular-nums">
+          {!mounted || clock === null ? '—:—:—' : new Date(clock).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
         </span>
 
         <div className="h-6 w-px bg-line" />
 
         {/* Actions */}
         <Tooltip label="Run cinematic demo (D)" side="bottom">
-          <button onClick={trigger} className="btn btn-accent h-8 px-3" suppressHydrationWarning>
+          <button onClick={trigger} className="btn btn-accent h-8 px-3">
             <Zap size={13} />
             <span className="text-[12.5px]">Run demo</span>
           </button>
         </Tooltip>
+        {/* Render dynamic controls safely behind a mounted check to avoid hydration mismatch */}
         <Tooltip label="Simulate blackout protocol (B)" side="bottom">
-          <button onClick={blackoutSim} className="btn btn-outline h-8 px-3" suppressHydrationWarning>
+          <button onClick={blackoutSim} className="btn btn-outline h-8 px-3">
             <Shield size={13} />
-            <span className="text-[12.5px]">{blackout.online ? 'Blackout' : 'Restore'}</span>
+            <span className="text-[12.5px]">{!mounted ? 'Blackout' : (blackout.online ? 'Blackout' : 'Restore')}</span>
           </button>
         </Tooltip>
         <Tooltip label="Toggle cinema mode (C)" side="bottom">
           <button
             onClick={() => setCinema(!cinema)}
-            className={`btn-icon ${cinema ? 'text-[#7C3AED]' : ''}`}
+            className={`btn-icon ${mounted && cinema ? 'text-[#7C3AED]' : ''}`}
             aria-label="cinema"
-            suppressHydrationWarning
           >
             <Film size={14} />
           </button>
