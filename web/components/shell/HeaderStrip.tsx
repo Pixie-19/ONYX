@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  Search, Zap, Shield, Film, Activity, Bell, ChevronDown, User, Wifi,
+  Search, Zap, Shield, Film, Activity, ChevronDown, Wifi,
 } from 'lucide-react';
 import { useOnyx } from '@/lib/store';
 import { ONYX_HTTP } from '@/lib/format';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { NotificationCenter } from '@/components/shell/NotificationCenter';
+import { ProfileDropdown } from '@/components/shell/ProfileDropdown';
 
 /**
  * Topbar — minimal, calm, premium.
@@ -18,7 +20,6 @@ import { Tooltip } from '@/components/ui/Tooltip';
  * inline on the right as small pills + the action buttons live alongside.
  */
 export function HeaderStrip() {
-  const session = useOnyx((s) => s.session);
   const connected = useOnyx((s) => s.connected);
   const stability = useOnyx((s) => s.buildStability);
   const blackout = useOnyx((s) => s.blackout);
@@ -28,7 +29,6 @@ export function HeaderStrip() {
   const setCommandOpen = useOnyx((s) => s.setCommandOpen);
   const workspaces = useOnyx((s) => s.workspaces);
   const activeId = useOnyx((s) => s.activeWorkspaceId);
-  const events = useOnyx((s) => s.events);
   const active = workspaces.find((w) => w.id === activeId);
 
   const [clock, setClock] = useState<number | null>(null);
@@ -39,9 +39,6 @@ export function HeaderStrip() {
   }, []);
 
   const stabBand = stability > 80 ? 'ok' : stability > 50 ? 'warn' : 'error';
-  const notifications = events.filter(
-    (e) => e.ts > Date.now() - 60_000 && ['BUILD_CRASH', 'COMPILER_FAILURE', 'DEPENDENCY_DEGRADED', 'LATENCY_SURGE', 'RULE_BREACH'].includes(e.kind),
-  ).length;
 
   const trigger = async () => {
     try {
@@ -191,23 +188,10 @@ export function HeaderStrip() {
         </Tooltip>
 
         {/* Notifications */}
-        <Tooltip label="Recent critical events" side="bottom">
-          <button className="btn-icon relative" aria-label="notifications">
-            <Bell size={14} />
-            {notifications > 0 && (
-              <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-1 rounded-full bg-[#EF4444] text-white text-[9.5px] font-semibold flex items-center justify-center">
-                {notifications > 9 ? '9+' : notifications}
-              </span>
-            )}
-          </button>
-        </Tooltip>
+        <NotificationCenter />
 
         {/* Profile */}
-        <Tooltip label={`Session · ${session ?? '—'}`} side="bottom">
-          <button className="w-8 h-8 rounded-full bg-surface-sunken hover:bg-surface-inset transition flex items-center justify-center" aria-label="profile">
-            <User size={14} className="text-secondary" />
-          </button>
-        </Tooltip>
+        <ProfileDropdown />
       </div>
     </header>
   );

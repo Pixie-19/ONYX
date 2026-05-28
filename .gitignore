@@ -10,6 +10,7 @@ agent/data/*.db
 agent/data/*.db-journal
 agent/data/*.db-wal
 agent/data/*.db-shm
+agent/data/.github-token.json
 *.tsbuildinfo
 .cache
 .turbo

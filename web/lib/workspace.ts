@@ -1,5 +1,10 @@
 import { ONYX_HTTP } from './format';
-import type { WorkspaceRow } from './types';
+import type {
+  WorkspaceRow,
+  TerminalSession,
+  TerminalChunk,
+  GithubSyncStatus,
+} from './types';
 
 export interface ConnectRequest {
   path: string;
@@ -7,63 +12,211 @@ export interface ConnectRequest {
   mode?: 'real' | 'demo';
 }
 
+/**
+ * Network-level errors here are expected: the agent process may be down,
+ * the cockpit may be running standalone, or the user may have unplugged
+ * a workspace. We never want a click handler to surface a raw
+ * `TypeError: Failed to fetch` overlay — every helper either resolves
+ * with a domain-shaped result (often `null`) or rejects with a
+ * normalized `AgentApiError` whose `.message` is safe to display.
+ */
+export class AgentApiError extends Error {
+  status: number;
+  constructor(message: string, status = 0) {
+    super(message);
+    this.name = 'AgentApiError';
+    this.status = status;
+  }
+}
+
+async function fetchJson<T>(
+  url: string,
+  init?: RequestInit,
+): Promise<{ ok: true; data: T } | { ok: false; error: AgentApiError }> {
+  let r: Response;
+  try {
+    r = await fetch(url, init);
+  } catch (err) {
+    // Browser network failure — agent unreachable, CORS blocked, offline.
+    const msg = err instanceof Error ? err.message : 'Network error';
+    return { ok: false, error: new AgentApiError(`Agent unreachable: ${msg}`, 0) };
+  }
+  let body: unknown = null;
+  try {
+    body = await r.json();
+  } catch {
+    if (!r.ok) return { ok: false, error: new AgentApiError(`HTTP ${r.status}`, r.status) };
+    return { ok: false, error: new AgentApiError('Invalid JSON response', r.status) };
+  }
+  if (!r.ok) {
+    const errMsg = (body as any)?.error ?? `HTTP ${r.status}`;
+    return { ok: false, error: new AgentApiError(String(errMsg), r.status) };
+  }
+  return { ok: true, data: body as T };
+}
+
 export async function connectWorkspaceApi(req: ConnectRequest): Promise<WorkspaceRow> {
-  const r = await fetch(`${ONYX_HTTP}/workspace/connect`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(req),
-  });
-  const body = await r.json();
-  if (!r.ok || !body.ok) throw new Error(body.error ?? `HTTP ${r.status}`);
-  return body.workspace as WorkspaceRow;
+  const res = await fetchJson<{ ok: boolean; error?: string; workspace?: WorkspaceRow }>(
+    `${ONYX_HTTP}/workspace/connect`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(req),
+    },
+  );
+  if (!res.ok) throw res.error;
+  if (!res.data.ok || !res.data.workspace) throw new AgentApiError(res.data.error ?? 'Connect failed');
+  return res.data.workspace;
 }
 
 export async function detachWorkspaceApi(id: string): Promise<void> {
-  const r = await fetch(`${ONYX_HTTP}/workspace/${id}`, { method: 'DELETE' });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const res = await fetchJson<{ ok?: boolean }>(`${ONYX_HTTP}/workspace/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw res.error;
 }
 
 export async function rescanWorkspaceApi(id: string): Promise<WorkspaceRow> {
-  const r = await fetch(`${ONYX_HTTP}/workspace/${id}/scan`, { method: 'POST' });
-  const body = await r.json();
-  if (!r.ok || !body.ok) throw new Error(body.error ?? `HTTP ${r.status}`);
-  return body.workspace as WorkspaceRow;
+  const res = await fetchJson<{ ok: boolean; error?: string; workspace?: WorkspaceRow }>(
+    `${ONYX_HTTP}/workspace/${id}/scan`,
+    { method: 'POST' },
+  );
+  if (!res.ok) throw res.error;
+  if (!res.data.ok || !res.data.workspace) throw new AgentApiError(res.data.error ?? 'Rescan failed');
+  return res.data.workspace;
 }
 
 export async function ensureDemoWorkspaceApi(): Promise<WorkspaceRow | null> {
-  const r = await fetch(`${ONYX_HTTP}/workspace/demo`, { method: 'POST' });
-  const body = await r.json();
-  if (!body.ok) return null;
-  return body.workspace as WorkspaceRow;
+  const res = await fetchJson<{ ok: boolean; workspace?: WorkspaceRow }>(
+    `${ONYX_HTTP}/workspace/demo`,
+    { method: 'POST' },
+  );
+  if (!res.ok) return null;
+  if (!res.data.ok || !res.data.workspace) return null;
+  return res.data.workspace;
 }
 
 export async function listWorkspacesApi(): Promise<WorkspaceRow[]> {
-  const r = await fetch(`${ONYX_HTTP}/workspace/list`);
-  const body = await r.json();
-  return (body.workspaces ?? []) as WorkspaceRow[];
+  const res = await fetchJson<{ workspaces?: WorkspaceRow[] }>(`${ONYX_HTTP}/workspace/list`);
+  if (!res.ok) return [];
+  return res.data.workspaces ?? [];
 }
 
-export async function syncGithubApi(workspace_id: string): Promise<{ ok: boolean; indexed?: number; error?: string }> {
-  const r = await fetch(`${ONYX_HTTP}/github/sync`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ workspace_id }),
-  });
-  return r.json();
+// ─── GitHub ─────────────────────────────────────────────────────────
+
+export async function syncGithubApi(workspace_id: string): Promise<{ ok: boolean; indexed?: number; error?: string; status?: GithubSyncStatus }> {
+  const res = await fetchJson<{ ok: boolean; indexed?: number; error?: string; status?: GithubSyncStatus }>(
+    `${ONYX_HTTP}/github/sync`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ workspace_id }),
+    },
+  );
+  if (!res.ok) return { ok: false, error: res.error.message };
+  return res.data;
 }
 
-export async function spawnTerminalApi(req: { workspace_id?: string; cwd: string; command: string; args?: string[] }) {
-  const r = await fetch(`${ONYX_HTTP}/terminal/spawn`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(req),
-  });
-  const body = await r.json();
-  if (!r.ok || !body.ok) throw new Error(body.error ?? `HTTP ${r.status}`);
-  return body.session;
+export async function githubAuthStatusApi(): Promise<{
+  configured: boolean;
+  source: 'runtime' | 'env' | 'none';
+  label: string | null;
+  registered_at: number | null;
+}> {
+  const res = await fetchJson<{
+    configured: boolean;
+    source: 'runtime' | 'env' | 'none';
+    label: string | null;
+    registered_at: number | null;
+  }>(`${ONYX_HTTP}/github/auth/status`);
+  if (!res.ok) {
+    return { configured: false, source: 'none', label: null, registered_at: null };
+  }
+  return res.data;
+}
+
+export async function githubRegisterTokenApi(token: string, label?: string): Promise<{ ok: boolean; error?: string }> {
+  const res = await fetchJson<{ ok: boolean; error?: string }>(
+    `${ONYX_HTTP}/github/auth/token`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token, label }),
+    },
+  );
+  if (!res.ok) return { ok: false, error: res.error.message };
+  return res.data;
+}
+
+export async function githubClearTokenApi(): Promise<void> {
+  await fetchJson(`${ONYX_HTTP}/github/auth/token`, { method: 'DELETE' });
+}
+
+export async function githubSyncStatusApi(workspace_id: string): Promise<GithubSyncStatus | null> {
+  const res = await fetchJson<{ ok: boolean; status?: GithubSyncStatus }>(
+    `${ONYX_HTTP}/github/status/${workspace_id}`,
+  );
+  if (!res.ok) return null;
+  if (!res.data.ok || !res.data.status) return null;
+  return res.data.status;
+}
+
+// ─── Terminal ───────────────────────────────────────────────────────
+
+export interface SpawnTerminalRequest {
+  workspace_id?: string;
+  cwd: string;
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
+
+export async function spawnTerminalApi(req: SpawnTerminalRequest): Promise<TerminalSession> {
+  const res = await fetchJson<{ ok: boolean; error?: string; session?: TerminalSession }>(
+    `${ONYX_HTTP}/terminal/spawn`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(req),
+    },
+  );
+  if (!res.ok) throw res.error;
+  if (!res.data.ok || !res.data.session) throw new AgentApiError(res.data.error ?? 'Spawn failed');
+  return res.data.session;
 }
 
 export async function stopTerminalApi(id: string): Promise<void> {
-  const r = await fetch(`${ONYX_HTTP}/terminal/${id}/stop`, { method: 'POST' });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const res = await fetchJson<{ ok?: boolean }>(`${ONYX_HTTP}/terminal/${id}/stop`, { method: 'POST' });
+  if (!res.ok) throw res.error;
+}
+
+export async function restartTerminalApi(id: string): Promise<TerminalSession> {
+  const res = await fetchJson<{ ok: boolean; error?: string; session?: TerminalSession }>(
+    `${ONYX_HTTP}/terminal/${id}/restart`,
+    { method: 'POST' },
+  );
+  if (!res.ok) throw res.error;
+  if (!res.data.ok || !res.data.session) throw new AgentApiError(res.data.error ?? 'Restart failed');
+  return res.data.session;
+}
+
+export async function listTerminalsApi(): Promise<TerminalSession[]> {
+  const res = await fetchJson<{ terminals?: TerminalSession[] }>(`${ONYX_HTTP}/terminal/list`);
+  if (!res.ok) return [];
+  return res.data.terminals ?? [];
+}
+
+export async function terminalBufferApi(id: string, limit = 600): Promise<{ session: TerminalSession; buffer: TerminalChunk[] } | null> {
+  const res = await fetchJson<{
+    ok: boolean;
+    session: TerminalSession;
+    buffer: Array<{ stream: 'stdout' | 'stderr'; data: string; ts: number }>;
+  }>(`${ONYX_HTTP}/terminal/${id}/buffer?limit=${limit}`);
+  if (!res.ok) return null;
+  if (!res.data.ok) return null;
+  const buffer: TerminalChunk[] = res.data.buffer.map((b) => ({
+    session_id: id,
+    stream: b.stream,
+    data: b.data,
+    ts: b.ts,
+  }));
+  return { session: res.data.session, buffer };
 }

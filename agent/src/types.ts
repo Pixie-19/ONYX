@@ -229,6 +229,14 @@ export interface GithubCommitRow {
   meta_json: string;
 }
 
+export type TerminalSignal =
+  | 'boot'
+  | 'compile_success'
+  | 'compile_warn'
+  | 'compile_fail'
+  | 'hmr'
+  | 'crash';
+
 export interface TerminalSession {
   id: string;
   workspace_id: string | null;
@@ -240,6 +248,49 @@ export interface TerminalSession {
   exited_at: number | null;
   exit_code: number | null;
   status: 'running' | 'exited' | 'crashed';
+  // enriched (optional) — populated by the connector as signals are observed
+  detected_framework?: Framework | null;
+  ports?: number[];
+  last_signal?: TerminalSignal | null;
+  restart_count?: number;
+  total_bytes?: number;
+}
+
+// GitHub sync status payload (mirrored in web/lib/types.ts).
+export interface GithubSyncStatusPayload {
+  workspace_id: string;
+  owner: string;
+  repo: string;
+  state: 'idle' | 'syncing' | 'ok' | 'error' | 'rate_limited';
+  last_synced_at: number | null;
+  commits: number;
+  branches: number;
+  contributors: number;
+  pulls: number;
+  repo_meta: {
+    description: string | null;
+    default_branch: string | null;
+    language: string | null;
+    stars: number;
+    forks: number;
+    open_issues: number;
+    topics: string[];
+    html_url: string | null;
+    pushed_at: number | null;
+  } | null;
+  branches_list: Array<{ name: string; sha: string; protected: boolean }>;
+  contributors_list: Array<{ login: string; contributions: number; avatar_url: string | null; html_url: string | null }>;
+  pulls_list: Array<{
+    number: number;
+    title: string;
+    state: 'open' | 'closed' | 'merged';
+    user: string | null;
+    created_at: number;
+    updated_at: number;
+    merged: boolean;
+  }>;
+  remaining_quota: number | null;
+  error: string | null;
 }
 
 // WS message envelope —— the cockpit subscribes to these.
@@ -260,5 +311,41 @@ export type WSMessage =
   | { type: 'workspace_update'; payload: WorkspaceRow }
   | { type: 'workspace_process'; payload: WorkspaceProcessRow }
   | { type: 'github_commit'; payload: GithubCommitRow }
+  | { type: 'github_sync_status'; payload: GithubSyncStatusPayload }
+  | { type: 'notification'; payload: NotificationPayload }
+  | { type: 'auth_session'; payload: AuthSessionPayload }
   | { type: 'terminal'; payload: TerminalSession }
   | { type: 'terminal_chunk'; payload: { session_id: string; stream: 'stdout' | 'stderr'; data: string; ts: number } };
+
+// ── auxiliary payloads ──────────────────────────────────────────────────
+export interface NotificationPayload {
+  id: string;
+  ts: number;
+  type: string;
+  category: 'system' | 'github' | 'ai' | 'infrastructure';
+  title: string;
+  message: string;
+  severity: 'info' | 'warn' | 'error' | 'critical';
+  read: boolean;
+  /** Optional originating event id, when the notification is derived from a replay event */
+  event_id?: string;
+}
+
+export interface AuthSessionPayload {
+  user: {
+    id: string;
+    name: string;
+    email: string | null;
+    github_login: string | null;
+    github_avatar_url: string | null;
+    created_at: number;
+    theme: 'light' | 'dark' | 'system';
+    notifications_enabled: boolean;
+    ai_provider: 'mistral' | 'ollama' | 'cache';
+    ai_routing_enabled: boolean;
+    telemetry_enabled: boolean;
+  };
+  github_access_token: string | null;
+  github_token_expires_at: number | null;
+  authenticated: boolean;
+}

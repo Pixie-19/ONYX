@@ -32,3 +32,16 @@ export function fmtPct(n: number, digits = 0): string {
 }
 
 export const ONYX_HTTP = process.env.NEXT_PUBLIC_ONYX_AGENT_HTTP ?? 'http://127.0.0.1:4311';
+
+export function fmtRelativeTime(ts: number): string {
+  const now = Date.now();
+  const diff = now - ts;
+  const abs = Math.abs(diff);
+  const past = diff >= 0;
+  if (abs < 5_000) return 'just now';
+  if (abs < 60_000) return `${past ? '' : 'in '}${Math.floor(abs / 1000)}s${past ? ' ago' : ''}`;
+  if (abs < 3_600_000) return `${past ? '' : 'in '}${Math.floor(abs / 60_000)}m${past ? ' ago' : ''}`;
+  if (abs < 86_400_000) return `${past ? '' : 'in '}${Math.floor(abs / 3_600_000)}h${past ? ' ago' : ''}`;
+  if (abs < 7 * 86_400_000) return `${past ? '' : 'in '}${Math.floor(abs / 86_400_000)}d${past ? ' ago' : ''}`;
+  return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}

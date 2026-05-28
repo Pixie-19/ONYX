@@ -2,6 +2,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useOnyxStream } from '@/lib/ws';
 import { useOnyx } from '@/lib/store';
+import { useAuthSync } from '@/lib/useAuthSync';
+import { useNotificationSynthesizer } from '@/lib/useNotificationSynthesizer';
 import { ONYX_HTTP } from '@/lib/format';
 import { Sidebar } from '@/components/shell/Sidebar';
 import { HeaderStrip } from '@/components/shell/HeaderStrip';
@@ -24,6 +26,8 @@ import { SonnerHost } from '@/components/overlays/SonnerHost';
  */
 export function CockpitShell({ children }: { children: ReactNode }) {
   useOnyxStream();
+  useAuthSync();
+  useNotificationSynthesizer();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const blackout = useOnyx((s) => s.blackout);

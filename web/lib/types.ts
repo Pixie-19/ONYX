@@ -157,6 +157,14 @@ export interface GithubCommitRow {
   meta_json: string;
 }
 
+export type TerminalSignal =
+  | 'boot'
+  | 'compile_success'
+  | 'compile_warn'
+  | 'compile_fail'
+  | 'hmr'
+  | 'crash';
+
 export interface TerminalSession {
   id: string;
   workspace_id: string | null;
@@ -168,6 +176,11 @@ export interface TerminalSession {
   exited_at: number | null;
   exit_code: number | null;
   status: 'running' | 'exited' | 'crashed';
+  detected_framework?: Framework | null;
+  ports?: number[];
+  last_signal?: TerminalSignal | null;
+  restart_count?: number;
+  total_bytes?: number;
 }
 
 export interface TerminalChunk {
@@ -204,6 +217,113 @@ export interface DemoPhase {
   ts: number;
 }
 
+export interface GithubBranchInfo { name: string; sha: string; protected: boolean }
+export interface GithubContributorInfo {
+  login: string;
+  contributions: number;
+  avatar_url: string | null;
+  html_url: string | null;
+}
+export interface GithubPullInfo {
+  number: number;
+  title: string;
+  state: 'open' | 'closed' | 'merged';
+  user: string | null;
+  created_at: number;
+  updated_at: number;
+  merged: boolean;
+}
+export interface GithubRepoMeta {
+  description: string | null;
+  default_branch: string | null;
+  language: string | null;
+  stars: number;
+  forks: number;
+  open_issues: number;
+  topics: string[];
+  html_url: string | null;
+  pushed_at: number | null;
+}
+export interface GithubSyncStatus {
+  workspace_id: string;
+  owner: string;
+  repo: string;
+  state: 'idle' | 'syncing' | 'ok' | 'error' | 'rate_limited';
+  last_synced_at: number | null;
+  commits: number;
+  branches: number;
+  contributors: number;
+  pulls: number;
+  repo_meta: GithubRepoMeta | null;
+  branches_list: GithubBranchInfo[];
+  contributors_list: GithubContributorInfo[];
+  pulls_list: GithubPullInfo[];
+  remaining_quota: number | null;
+  error: string | null;
+}
+
+// ─────────── Notifications ───────────
+export type NotificationType =
+  | 'compiler_warning'
+  | 'runtime_crash'
+  | 'blackout_protocol'
+  | 'github_sync'
+  | 'repo_disconnected'
+  | 'thermal_alert'
+  | 'port_collision'
+  | 'dependency_failure'
+  | 'ai_cognition'
+  | 'replay_snapshot'
+  | 'terminal_attach'
+  | 'system_alert';
+
+export type NotificationCategory = 'all' | 'system' | 'github' | 'ai' | 'infrastructure';
+
+export interface Notification {
+  id: string;
+  ts: number;
+  type: NotificationType;
+  category: NotificationCategory;
+  title: string;
+  message: string;
+  severity: Severity;
+  read: boolean;
+  actionUrl?: string;
+  actionLabel?: string;
+  event?: ReplayEvent;
+}
+
+// ─────────── Profile & Auth ───────────
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string | null;
+  github_login: string | null;
+  github_avatar_url: string | null;
+  created_at: number;
+  theme: 'light' | 'dark' | 'system';
+  notifications_enabled: boolean;
+  ai_provider: 'mistral' | 'ollama' | 'cache';
+  ai_routing_enabled: boolean;
+  telemetry_enabled: boolean;
+}
+
+export interface AuthSession {
+  user: UserProfile;
+  github_access_token: string | null;
+  github_token_expires_at: number | null;
+  authenticated: boolean;
+}
+
+export interface GithubConnectionStatus {
+  connected: boolean;
+  login: string | null;
+  avatar_url: string | null;
+  repos_synced: number;
+  last_sync_at: number | null;
+  quota_remaining: number | null;
+}
+
 export type WSMessage =
   | { type: 'hello'; session_id: string; ts: number; build_stability: number }
   | { type: 'event'; payload: ReplayEvent }
@@ -221,5 +341,8 @@ export type WSMessage =
   | { type: 'workspace_update'; payload: WorkspaceRow }
   | { type: 'workspace_process'; payload: WorkspaceProcessRow }
   | { type: 'github_commit'; payload: GithubCommitRow }
+  | { type: 'github_sync_status'; payload: GithubSyncStatus }
+  | { type: 'notification'; payload: Notification }
+  | { type: 'auth_session'; payload: AuthSession }
   | { type: 'terminal'; payload: TerminalSession }
   | { type: 'terminal_chunk'; payload: TerminalChunk };

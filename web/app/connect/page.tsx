@@ -1,12 +1,14 @@
 'use client';
 import { useMemo } from 'react';
-import { FolderInput, Cpu, Plug } from 'lucide-react';
+import { FolderInput, Cpu, Plug, Github, Terminal as TerminalIcon } from 'lucide-react';
 import { useOnyx } from '@/lib/store';
 import { PageHeader } from '@/components/shell/PageHeader';
 import { Panel } from '@/components/primitives/Panel';
 import { Badge } from '@/components/ui/Badge';
 import { WorkspaceConnector } from '@/components/connector/WorkspaceConnector';
 import { WorkspaceCard } from '@/components/connector/WorkspaceCard';
+import { GithubConnection } from '@/components/connector/GithubConnection';
+import { TerminalConsole } from '@/components/connector/TerminalConsole';
 import { fmtShortTs } from '@/lib/format';
 import type { WorkspaceProcessRow } from '@/lib/types';
 
@@ -15,6 +17,15 @@ export default function ConnectPage() {
   const activeId = useOnyx((s) => s.activeWorkspaceId);
   const setActive = useOnyx((s) => s.setActiveWorkspace);
   const processes = useOnyx((s) => s.workspaceProcesses);
+  const terminals = useOnyx((s) => s.terminals);
+
+  const activeWs = workspaces.find((w) => w.id === activeId) ?? workspaces[0] ?? null;
+  const activeTerminals = useMemo(
+    () => terminals.filter((t) => t.workspace_id === (activeWs?.id ?? null)),
+    [terminals, activeWs?.id],
+  );
+  const liveTerminal =
+    activeTerminals.find((t) => t.status === 'running') ?? activeTerminals[0] ?? null;
 
   const services = useMemo(() => {
     const m = new Map<string, WorkspaceProcessRow>();
@@ -102,6 +113,46 @@ export default function ConnectPage() {
               </div>
             </Panel>
           </div>
+
+          {/* ── GitHub + Terminal preview for the active workspace ── */}
+          {activeWs && (
+            <div className="col-span-12 grid grid-cols-12 gap-4 mt-2">
+              <Panel
+                title="GitHub repository"
+                badge={
+                  <span className="inline-flex items-center gap-1 text-[11.5px] text-secondary">
+                    <Github size={11} /> {activeWs.name}
+                  </span>
+                }
+                className="col-span-7 min-h-[280px]"
+                scroll
+              >
+                <GithubConnection workspace={activeWs} />
+              </Panel>
+
+              <div className="col-span-5 min-h-[280px]">
+                {liveTerminal ? (
+                  <TerminalConsole session={liveTerminal} height={420} />
+                ) : (
+                  <Panel
+                    title="Terminal stream"
+                    badge={
+                      <span className="inline-flex items-center gap-1 text-[11.5px] text-secondary">
+                        <TerminalIcon size={11} /> {activeWs.name}
+                      </span>
+                    }
+                    className="min-h-[280px]"
+                  >
+                    <div className="text-[12.5px] text-secondary leading-relaxed py-6 text-center">
+                      No terminal session for this workspace yet. Open the Attach Running Terminal
+                      slot above, pick a command, and ONYX will start streaming live output, port
+                      discovery, and crash signals into the cockpit.
+                    </div>
+                  </Panel>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

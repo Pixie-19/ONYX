@@ -14,8 +14,14 @@ import type {
   WorkspaceRow,
   WorkspaceProcessRow,
   GithubCommitRow,
+  GithubSyncStatus,
   TerminalSession,
   TerminalChunk,
+  Notification,
+  NotificationCategory,
+  UserProfile,
+  AuthSession,
+  GithubConnectionStatus,
 } from './types';
 import { normalizeTopologyGraph } from './topology-normalize';
 
@@ -49,8 +55,25 @@ interface ONYXState {
   activeWorkspaceId: string | null;
   workspaceProcesses: WorkspaceProcessRow[];
   githubCommits: GithubCommitRow[];
+  githubSync: Record<string, GithubSyncStatus>;
   terminals: TerminalSession[];
   terminalChunks: Record<string, TerminalChunk[]>;
+
+  // ── notifications ─────────────────────────────────
+  notifications: Notification[];
+  notificationsUnread: number;
+  notificationFilter: NotificationCategory;
+
+  // ── auth & profile ────────────────────────────────
+  authSession: AuthSession | null;
+  githubConnection: GithubConnectionStatus;
+  userPreferences: {
+    theme: 'light' | 'dark' | 'system';
+    aiProvider: 'mistral' | 'ollama' | 'cache';
+    aiRoutingEnabled: boolean;
+    notificationsEnabled: boolean;
+    telemetryEnabled: boolean;
+  };
 
   // ── cockpit ux state ─────────────────────────────────
   focusedSection: string | null;
@@ -62,6 +85,17 @@ interface ONYXState {
   toggleCinema: () => void;
   setCinema: (b: boolean) => void;
   setActiveWorkspace: (id: string | null) => void;
+
+  // ── notification methods ──────────────────────────
+  addNotification: (n: Notification) => void;
+  markNotificationRead: (id: string) => void;
+  clearNotifications: () => void;
+  setNotificationFilter: (f: NotificationCategory) => void;
+
+  // ── auth methods ──────────────────────────────────
+  setAuthSession: (session: AuthSession | null) => void;
+  setGithubConnection: (conn: GithubConnectionStatus) => void;
+  updateUserPreferences: (prefs: Partial<ONYXState['userPreferences']>) => void;
 
   ingestHello: (m: { session_id: string; build_stability: number }) => void;
   ingestEvent: (ev: ReplayEvent) => void;
@@ -79,8 +113,12 @@ interface ONYXState {
   ingestWorkspaceUpdate: (ws: WorkspaceRow) => void;
   ingestWorkspaceProcess: (p: WorkspaceProcessRow) => void;
   ingestGithubCommit: (c: GithubCommitRow) => void;
+  ingestGithubSyncStatus: (s: GithubSyncStatus) => void;
+  ingestNotification: (n: Notification) => void;
+  ingestAuthSession: (s: AuthSession) => void;
   ingestTerminal: (t: TerminalSession) => void;
   ingestTerminalChunk: (c: TerminalChunk) => void;
+  hydrateTerminalChunks: (id: string, chunks: TerminalChunk[]) => void;
 
   setConnected: (c: boolean) => void;
 }
@@ -114,8 +152,30 @@ export const useOnyx = create<ONYXState>()(
     activeWorkspaceId: null,
     workspaceProcesses: [],
     githubCommits: [],
+    githubSync: {},
     terminals: [],
     terminalChunks: {},
+
+    notifications: [],
+    notificationsUnread: 0,
+    notificationFilter: 'all',
+
+    authSession: null,
+    githubConnection: {
+      connected: false,
+      login: null,
+      avatar_url: null,
+      repos_synced: 0,
+      last_sync_at: null,
+      quota_remaining: null,
+    },
+    userPreferences: {
+      theme: 'system',
+      aiProvider: 'mistral',
+      aiRoutingEnabled: true,
+      notificationsEnabled: true,
+      telemetryEnabled: true,
+    },
 
     focusedSection: null,
     commandOpen: false,
@@ -126,6 +186,27 @@ export const useOnyx = create<ONYXState>()(
     toggleCinema: () => set((s) => ({ cinemaMode: !s.cinemaMode })),
     setCinema: (b) => set({ cinemaMode: b }),
     setActiveWorkspace: (id) => set({ activeWorkspaceId: id }),
+
+    addNotification: (n) => set((s) => ({
+      notifications: RING(100)(s.notifications, n),
+      notificationsUnread: s.notificationsUnread + (n.read ? 0 : 1),
+    })),
+    markNotificationRead: (id) => set((s) => {
+      const notif = s.notifications.find((n) => n.id === id);
+      if (!notif || notif.read) return s;
+      return {
+        notifications: s.notifications.map((n) => n.id === id ? { ...n, read: true } : n),
+        notificationsUnread: Math.max(0, s.notificationsUnread - 1),
+      };
+    }),
+    clearNotifications: () => set({ notifications: [], notificationsUnread: 0 }),
+    setNotificationFilter: (f) => set({ notificationFilter: f }),
+
+    setAuthSession: (session) => set({ authSession: session }),
+    setGithubConnection: (conn) => set({ githubConnection: conn }),
+    updateUserPreferences: (prefs) => set((s) => ({
+      userPreferences: { ...s.userPreferences, ...prefs },
+    })),
 
     ingestHello: (m) => set({ session: m.session_id, buildStability: m.build_stability ?? 100 }),
     ingestEvent: (ev) => set((s) => ({ events: RING(512)(s.events, ev) })),
@@ -164,6 +245,14 @@ export const useOnyx = create<ONYXState>()(
     }),
     ingestWorkspaceProcess: (p) => set((s) => ({ workspaceProcesses: RING(160)(s.workspaceProcesses, p) })),
     ingestGithubCommit: (c) => set((s) => ({ githubCommits: RING(120)(s.githubCommits, c) })),
+    ingestGithubSyncStatus: (status) => set((s) => ({
+      githubSync: { ...s.githubSync, [status.workspace_id]: status },
+    })),
+    ingestNotification: (n) => set((s) => ({
+      notifications: RING(100)(s.notifications, n),
+      notificationsUnread: s.notificationsUnread + (n.read ? 0 : 1),
+    })),
+    ingestAuthSession: (s) => set({ authSession: s }),
     ingestTerminal: (t) => set((s) => {
       const idx = s.terminals.findIndex((x) => x.id === t.id);
       const next = idx === -1 ? [t, ...s.terminals].slice(0, 12) : s.terminals.map((x) => x.id === t.id ? t : x);
@@ -175,6 +264,9 @@ export const useOnyx = create<ONYXState>()(
       trimmed.push(c);
       return { terminalChunks: { ...s.terminalChunks, [c.session_id]: trimmed } };
     }),
+    hydrateTerminalChunks: (id, chunks) => set((s) => ({
+      terminalChunks: { ...s.terminalChunks, [id]: chunks.slice(-400) },
+    })),
 
     setConnected: (c) => set({ connected: c }),
   })),

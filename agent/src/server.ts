@@ -21,8 +21,24 @@ import {
   listWorkspaces, getWorkspace, restoreWorkspaces,
 } from './connectors/workspace.js';
 import { startRuntimeDiscovery, listRuntimeServices } from './connectors/runtime.js';
-import { syncRepo } from './connectors/github.js';
-import { spawnTerminal, stopTerminal, listTerminals } from './connectors/terminal.js';
+import {
+  syncRepo,
+  registerToken,
+  clearToken,
+  authStatus,
+  getSyncStatus,
+  listSyncStatuses,
+  deviceFlowStart,
+} from './connectors/github.js';
+import {
+  spawnTerminal,
+  stopTerminal,
+  restartTerminal,
+  listTerminals,
+  getTerminal,
+  getTerminalBuffer,
+  killAllTerminals,
+} from './connectors/terminal.js';
 import type { WSMessage } from './types.js';
 
 // ---------- bootstrap ----------
@@ -76,6 +92,13 @@ app.get('/stream', { websocket: true }, (socket /* WebSocket — @fastify/websoc
   send(JSON.stringify({ type: 'blackout', payload: currentBlackout() } satisfies WSMessage));
   // hydrate workspace list
   send(JSON.stringify({ type: 'workspace_list', payload: listWorkspaces() } satisfies WSMessage));
+  // hydrate any existing terminal sessions + github sync statuses
+  for (const t of listTerminals()) {
+    send(JSON.stringify({ type: 'terminal', payload: t } satisfies WSMessage));
+  }
+  for (const s of listSyncStatuses()) {
+    send(JSON.stringify({ type: 'github_sync_status', payload: s } satisfies WSMessage));
+  }
 
   socket.on('close', () => clients.delete(client));
   socket.on('error', () => clients.delete(client));
@@ -201,27 +224,81 @@ app.post('/github/sync', async (req, reply) => {
   return r;
 });
 
+app.get('/github/auth/status', async () => authStatus());
+
+app.post('/github/auth/token', async (req, reply) => {
+  const body = (req.body as any) ?? {};
+  const r = registerToken(String(body.token ?? ''), body.label ? String(body.label) : undefined);
+  if (!r.ok) { reply.code(400); return r; }
+  return { ok: true, label: r.label, status: authStatus() };
+});
+
+app.delete('/github/auth/token', async () => {
+  clearToken();
+  return { ok: true, status: authStatus() };
+});
+
+app.post('/github/auth/device/start', async (req, reply) => {
+  const r = await deviceFlowStart();
+  if (!r.ok) { reply.code(400); return r; }
+  return r;
+});
+
+app.get('/github/status', async () => ({ statuses: listSyncStatuses() }));
+
+app.get('/github/status/:id', async (req, reply) => {
+  const id = (req.params as any).id as string;
+  const s = getSyncStatus(id);
+  if (!s) { reply.code(404); return { ok: false, error: 'no sync status for workspace' }; }
+  return { ok: true, status: s };
+});
+
 // ──────────────── Terminal Attachment ────────────────
 app.get('/terminal/list', async () => ({ terminals: listTerminals() }));
+
+app.get('/terminal/:id', async (req, reply) => {
+  const id = (req.params as any).id as string;
+  const t = getTerminal(id);
+  if (!t) { reply.code(404); return { ok: false, error: 'session not found' }; }
+  return { ok: true, session: t };
+});
+
+app.get('/terminal/:id/buffer', async (req, reply) => {
+  const id = (req.params as any).id as string;
+  const q = req.query as any;
+  const limit = Math.min(Number(q?.limit ?? 600), 1200);
+  const session = getTerminal(id);
+  if (!session) { reply.code(404); return { ok: false, error: 'session not found' }; }
+  return { ok: true, session, buffer: getTerminalBuffer(id, limit) };
+});
 
 app.post('/terminal/spawn', async (req, reply) => {
   const body = (req.body as any) ?? {};
   const cwd = String(body.cwd ?? '').trim();
   const command = String(body.command ?? '').trim();
   if (!cwd || !command) { reply.code(400); return { ok: false, error: 'cwd and command required' }; }
-  const session = spawnTerminal({
+  const result = spawnTerminal({
     workspace_id: body.workspace_id ?? null,
     cwd,
     command,
     args: Array.isArray(body.args) ? body.args.map((a: unknown) => String(a)) : [],
+    env: typeof body.env === 'object' && body.env ? body.env : undefined,
   });
-  return { ok: true, session };
+  if (!result.ok) { reply.code(400); return result; }
+  return { ok: true, session: result.session };
 });
 
 app.post('/terminal/:id/stop', async (req, reply) => {
   const id = (req.params as any).id as string;
   const r = stopTerminal(id);
   if (!r.ok) { reply.code(404); return r; }
+  return r;
+});
+
+app.post('/terminal/:id/restart', async (req, reply) => {
+  const id = (req.params as any).id as string;
+  const r = restartTerminal(id);
+  if (!r.ok) { reply.code(r.error === 'session not found' ? 404 : 400); return r; }
   return r;
 });
 
@@ -257,6 +334,7 @@ try {
 // ---------- graceful shutdown ----------
 function shutdown(signal: string) {
   app.log.info(`shutdown signal: ${signal}`);
+  killAllTerminals();
   closeJsonl();
   app.close().finally(() => process.exit(0));
 }

@@ -1,13 +1,16 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
-  Folder, FolderInput, Github, Terminal as TerminalIcon, History, ArrowRight, Sparkles,
+  Folder, FolderInput, Github, Terminal as TerminalIcon, History, ArrowRight, Sparkles, ArrowUpRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { connectWorkspaceApi, ensureDemoWorkspaceApi } from '@/lib/workspace';
 import { useOnyx } from '@/lib/store';
 import { ScanAnimation } from './ScanAnimation';
+import { TerminalLauncher } from './TerminalLauncher';
+import { GithubConnection } from './GithubConnection';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/format';
 
@@ -61,10 +64,14 @@ const SLOTS: Slot[] = [
 
 export function WorkspaceConnector({ onAttached }: { onAttached?: () => void }) {
   const workspaces = useOnyx((s) => s.workspaces);
+  const activeId = useOnyx((s) => s.activeWorkspaceId);
+  const setActive = useOnyx((s) => s.setActiveWorkspace);
   const [openSlot, setOpenSlot] = useState<Slot['id'] | null>(null);
   const [path, setPath] = useState('');
   const [name, setName] = useState('');
   const [pending, setPending] = useState(false);
+
+  const activeWs = workspaces.find((w) => w.id === activeId) ?? workspaces[0] ?? null;
 
   const submitLocal = async () => {
     if (!path.trim()) return;
@@ -183,20 +190,56 @@ export function WorkspaceConnector({ onAttached }: { onAttached?: () => void }) 
               )}
 
               {active && slot.id === 'terminal' && (
-                <div className="mt-3 text-[12px] text-secondary leading-relaxed" onClick={(e) => e.stopPropagation()}>
-                  Attach a workspace first — terminal sessions spawn from{' '}
-                  <code className="text-[#4F46E5] font-mono dark:text-indigo-300">
-                    /workspace/[id]/terminal
-                  </code>
-                  .
+                <div className="mt-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+                  {activeWs ? (
+                    <>
+                      <div className="flex items-center gap-2 text-[11.5px] text-secondary">
+                        <span>Target workspace:</span>
+                        <select
+                          value={activeWs.id}
+                          onChange={(e) => setActive(e.target.value)}
+                          className="px-2 py-1 rounded-md border border-line bg-surface-raised text-[12px] text-primary outline-none focus:border-[#4F46E5]"
+                        >
+                          {workspaces.map((w) => (
+                            <option key={w.id} value={w.id}>
+                              {w.name}
+                            </option>
+                          ))}
+                        </select>
+                        <Link
+                          href={`/workspace/${activeWs.id}/terminal`}
+                          className="ml-auto inline-flex items-center gap-1 text-[#4F46E5] hover:underline"
+                        >
+                          full console <ArrowUpRight size={11} />
+                        </Link>
+                      </div>
+                      <TerminalLauncher workspace={activeWs} />
+                    </>
+                  ) : (
+                    <div className="text-[12px] text-secondary leading-relaxed">
+                      Attach a local workspace first — terminal sessions spawn against an attached
+                      project. Once attached, this slot becomes a one-click launcher and a live
+                      console is available at{' '}
+                      <code className="text-[#4F46E5] font-mono dark:text-indigo-300">
+                        /workspace/[id]/terminal
+                      </code>
+                      .
+                    </div>
+                  )}
                 </div>
               )}
               {active && slot.id === 'github' && (
-                <div className="mt-3 text-[12px] text-secondary leading-relaxed" onClick={(e) => e.stopPropagation()}>
-                  Attach a local workspace with a github remote — ONYX will detect and offer the
-                  sync action from the workspace card. Set{' '}
-                  <code className="text-[#4F46E5] font-mono dark:text-indigo-300">GITHUB_TOKEN</code> in the agent env for private
-                  repos.
+                <div className="mt-4" onClick={(e) => e.stopPropagation()}>
+                  {activeWs ? (
+                    <GithubConnection workspace={activeWs} />
+                  ) : (
+                    <div className="text-[12px] text-secondary leading-relaxed">
+                      Attach a workspace with a github remote first — ONYX auto-detects
+                      <code className="text-[#4F46E5] font-mono dark:text-indigo-300"> .git/config </code>
+                      and offers sync directly. Register a Personal Access Token here for private
+                      repositories without restarting the agent.
+                    </div>
+                  )}
                 </div>
               )}
               {active && slot.id === 'session' && (

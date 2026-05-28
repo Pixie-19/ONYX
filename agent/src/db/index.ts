@@ -19,6 +19,7 @@ const SCHEMA_FILES = [
   'workspaces.sql',
   'workspace_processes.sql',
   'github_commits.sql',
+  'github_sync_runs.sql',
 ];
 
 function loadSchemas(): string {

@@ -1,6 +1,7 @@
 'use client';
-import { Link as LinkIcon, GitBranch, Folder, Trash2, RotateCcw, RefreshCw } from 'lucide-react';
+import { Link as LinkIcon, GitBranch, Folder, Trash2, RotateCcw, RefreshCw, Terminal as TerminalIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
+import NextLink from 'next/link';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/Badge';
 import { FrameworkBadge } from './FrameworkBadge';
@@ -90,6 +91,14 @@ export function WorkspaceCard({
         </div>
 
         <div className="flex flex-col gap-1 shrink-0">
+          <NextLink
+            href={`/workspace/${ws.id}/terminal`}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            title="Open terminal"
+            className="btn-icon !w-7 !h-7"
+          >
+            <TerminalIcon size={12} />
+          </NextLink>
           <button onClick={rescan} title="Rescan" className="btn-icon !w-7 !h-7">
             <RotateCcw size={12} />
           </button>

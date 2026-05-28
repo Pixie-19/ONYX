@@ -76,6 +76,9 @@ export function useOnyxStream(): void {
           case 'workspace_update':   s.ingestWorkspaceUpdate(msg.payload); break;
           case 'workspace_process':  s.ingestWorkspaceProcess(msg.payload); break;
           case 'github_commit':      s.ingestGithubCommit(msg.payload); break;
+          case 'github_sync_status': s.ingestGithubSyncStatus(msg.payload); break;
+          case 'notification':       s.ingestNotification(msg.payload); break;
+          case 'auth_session':       s.ingestAuthSession(msg.payload); break;
           case 'terminal':           s.ingestTerminal(msg.payload); break;
           case 'terminal_chunk':     s.ingestTerminalChunk(msg.payload); break;
         }
