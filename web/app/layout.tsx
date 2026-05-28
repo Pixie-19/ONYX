@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { AuthProvider } from '@/components/AuthProvider';
-import { CockpitShell } from '@/components/CockpitShell';
+import { AppShell } from '@/components/AppShell';
 
 const sans = Inter({
   subsets: ['latin'],
@@ -42,7 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
         <AuthProvider>
-          <CockpitShell>{children}</CockpitShell>
+          <AppShell>{children}</AppShell>
         </AuthProvider>
       </body>
     </html>

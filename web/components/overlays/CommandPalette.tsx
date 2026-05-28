@@ -130,7 +130,7 @@ export function CommandPalette() {
             </Command.Group>
 
             <Command.Group heading="Navigation">
-              <Command.Item onSelect={nav('/')}><LayoutGrid size={14} /> Overview</Command.Item>
+              <Command.Item onSelect={nav('/overview')}><LayoutGrid size={14} /> Overview</Command.Item>
               <Command.Item onSelect={nav('/graph')}><Layers size={14} /> Operational Graph</Command.Item>
               <Command.Item onSelect={nav('/telemetry')}><Activity size={14} /> Telemetry</Command.Item>
               <Command.Item onSelect={nav('/replay')}><GitBranch size={14} /> Replay Engine</Command.Item>

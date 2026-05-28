@@ -62,7 +62,7 @@ export function Sidebar({ collapsed, onToggle }: Props) {
     label: 'Overview',
     short: 'OVR',
     icon: LayoutGrid,
-    href: '/',
+    href: '/overview',
     caption: 'Executive summary of the running platform.',
   };
   const allItems = [overviewItem, ...SECTIONS];
@@ -77,7 +77,7 @@ export function Sidebar({ collapsed, onToggle }: Props) {
     >
       {/* Brand row */}
       <div className="relative flex items-center justify-between px-3 h-14 border-b border-line">
-        <Link href="/" className="flex items-center gap-2.5 min-w-0">
+        <Link href="/overview" className="flex items-center gap-2.5 min-w-0">
           <Brand collapsed={collapsed} />
         </Link>
         <button
@@ -105,10 +105,7 @@ export function Sidebar({ collapsed, onToggle }: Props) {
               )}
               <div className="flex flex-col">
                 {items.map((s) => {
-                  const isActive =
-                    s.href === '/'
-                      ? pathname === '/'
-                      : pathname === s.href || pathname.startsWith(s.href + '/');
+                  const isActive = pathname === s.href || pathname.startsWith(s.href + '/');
                   const Icon = s.icon;
                   const count = counts[s.key] ?? 0;
                   const link = (
