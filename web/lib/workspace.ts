@@ -69,6 +69,43 @@ export async function connectWorkspaceApi(req: ConnectRequest): Promise<Workspac
   return res.data.workspace;
 }
 
+export interface ConnectRemoteRequest {
+  owner: string;
+  repo: string;
+  name?: string;
+  default_branch?: string | null;
+  language?: string | null;
+  description?: string | null;
+  visibility?: 'public' | 'private' | 'internal' | null;
+  html_url?: string | null;
+  ssh_url?: string | null;
+  clone_url?: string | null;
+  avatar_url?: string | null;
+  stars?: number | null;
+}
+
+/**
+ * Register a GitHub repository as a remote-only ONYX workspace. The agent
+ * persists it under a synthetic `github://owner/repo` path — no local
+ * filesystem watcher is created, but commit/branch/PR sync engages on
+ * demand via `syncGithubApi(workspace_id)`.
+ */
+export async function connectRemoteWorkspaceApi(req: ConnectRemoteRequest): Promise<WorkspaceRow> {
+  const res = await fetchJson<{ ok: boolean; error?: string; workspace?: WorkspaceRow }>(
+    `${ONYX_HTTP}/workspace/connect-remote`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(req),
+    },
+  );
+  if (!res.ok) throw res.error;
+  if (!res.data.ok || !res.data.workspace) {
+    throw new AgentApiError(res.data.error ?? 'Connect failed');
+  }
+  return res.data.workspace;
+}
+
 export async function detachWorkspaceApi(id: string): Promise<void> {
   const res = await fetchJson<{ ok?: boolean }>(`${ONYX_HTTP}/workspace/${id}`, { method: 'DELETE' });
   if (!res.ok) throw res.error;
@@ -157,6 +194,89 @@ export async function githubSyncStatusApi(workspace_id: string): Promise<GithubS
   if (!res.ok) return null;
   if (!res.data.ok || !res.data.status) return null;
   return res.data.status;
+}
+
+// ─── User-scoped repository listing (Next.js /api proxy) ──────────────────
+
+export interface NormalizedGithubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  private: boolean;
+  html_url: string;
+  clone_url: string;
+  ssh_url: string;
+  description: string | null;
+  language: string | null;
+  default_branch: string | null;
+  stargazers_count: number;
+  forks_count: number;
+  open_issues_count: number;
+  pushed_at: number | null;
+  updated_at: number | null;
+  archived: boolean;
+  fork: boolean;
+  visibility: 'public' | 'private' | 'internal';
+  topics: string[];
+  owner: { login: string; avatar_url: string; html_url: string; type: string };
+}
+
+export interface ListReposResult {
+  repositories: NormalizedGithubRepo[];
+  page: number;
+  per_page: number;
+  has_next: boolean;
+  total_count: number | null;
+  rate_limit_remaining: number | null;
+  rate_limit_reset: number | null;
+  user?: { login: string | null; avatar_url: string | null };
+  error?: string;
+  code?: 'AUTH_REQUIRED' | 'RATE_LIMITED' | 'TOKEN_INVALID' | 'GITHUB_ERROR' | 'NETWORK';
+  status?: number;
+}
+
+export async function listGithubRepositoriesApi(opts: {
+  search?: string;
+  page?: number;
+  per_page?: number;
+  sort?: 'updated' | 'pushed' | 'created' | 'full_name';
+  signal?: AbortSignal;
+} = {}): Promise<ListReposResult> {
+  const params = new URLSearchParams();
+  if (opts.search) params.set('search', opts.search);
+  if (opts.page) params.set('page', String(opts.page));
+  if (opts.per_page) params.set('per_page', String(opts.per_page));
+  if (opts.sort) params.set('sort', opts.sort);
+
+  let r: Response;
+  try {
+    r = await fetch(`/api/github/repositories?${params.toString()}`, {
+      method: 'GET',
+      credentials: 'same-origin',
+      signal: opts.signal,
+      cache: 'no-store',
+    });
+  } catch (err) {
+    return {
+      repositories: [], page: opts.page ?? 1, per_page: opts.per_page ?? 30,
+      has_next: false, total_count: null, rate_limit_remaining: null, rate_limit_reset: null,
+      error: (err as Error).message, code: 'NETWORK', status: 0,
+    };
+  }
+  let body: any = null;
+  try { body = await r.json(); } catch { /* ignore */ }
+  if (!r.ok) {
+    return {
+      repositories: [], page: opts.page ?? 1, per_page: opts.per_page ?? 30,
+      has_next: false, total_count: null,
+      rate_limit_remaining: body?.rate_limit_remaining ?? null,
+      rate_limit_reset: body?.retry_at ?? null,
+      error: body?.error ?? `HTTP ${r.status}`,
+      code: body?.code,
+      status: r.status,
+    };
+  }
+  return body as ListReposResult;
 }
 
 // ─── Terminal ───────────────────────────────────────────────────────
