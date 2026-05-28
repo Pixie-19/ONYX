@@ -80,7 +80,7 @@ export async function discoverOnce(): Promise<void> {
   // Prefer a local workspace as the discovery anchor — remote-only rows
   // (github://owner/repo) have no on-disk processes to attribute to.
   const localWorkspaces = workspaces.filter((w) => !w.path.startsWith('github://'));
-  const wsForCwd = (localWorkspaces[0] ?? workspaces[0])?.id ?? null;
+  const wsForCwd = localWorkspaces[0]?.id ?? null;
 
   // ── port probes ──
   await Promise.all(COMMON_DEV_PORTS.map(async (p) => {

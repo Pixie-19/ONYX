@@ -120,6 +120,7 @@ export async function GET(req: Request) {
   // the access token to the client.
   const session = await auth().catch(() => null);
   const token = (session?.user as any)?.github_access_token as string | undefined | null;
+  const login = (session?.user as any)?.github_login as string | undefined | null;
 
   if (!session || !token) {
     return NextResponse.json(
@@ -152,7 +153,7 @@ export async function GET(req: Request) {
   if (search) {
     // GitHub's repo search needs a different endpoint shape and includes
     // private repos when the token grants `repo` scope.
-    const q = `${search} in:name,description user:@me`;
+    const q = login ? `${search} in:name,description user:${login}` : `${search} in:name,description`;
     const searchParams = new URLSearchParams({
       q,
       per_page: String(per_page),

@@ -303,10 +303,10 @@ interface RemoteConnectInput {
 }
 
 export async function connectRemoteWorkspace(input: RemoteConnectInput): Promise<ConnectResult> {
-  const owner = (input.owner ?? '').trim();
-  const repo = (input.repo ?? '').trim();
+  const owner = (input.owner ?? '').trim().toLowerCase();
+  const repo = (input.repo ?? '').trim().toLowerCase();
   if (!owner || !repo) return { ok: false, error: 'owner and repo are required' };
-  if (!/^[A-Za-z0-9._-]+$/.test(owner) || !/^[A-Za-z0-9._-]+$/.test(repo)) {
+  if (!/^[a-z0-9._-]+$/.test(owner) || !/^[a-z0-9._-]+$/.test(repo)) {
     return { ok: false, error: 'invalid owner/repo characters' };
   }
 
