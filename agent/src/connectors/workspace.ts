@@ -252,6 +252,12 @@ export async function rescanWorkspace(id: string): Promise<ConnectResult> {
 export async function restoreWorkspaces(): Promise<void> {
   const rows = listWorkspaces();
   for (const ws of rows) {
+    // Remote-only workspaces (github://owner/repo) have no on-disk path —
+    // skip the existence check, leave their status alone, and never wire
+    // a filesystem watcher.
+    if (ws.path.startsWith('github://')) {
+      continue;
+    }
     if (existsSync(ws.path)) {
       WATCH_LIFECYCLE.onAttach(ws);
       bus.emitReplayEvent({
@@ -266,6 +272,91 @@ export async function restoreWorkspaces(): Promise<void> {
     }
   }
   broadcastList();
+}
+
+/**
+ * Register a workspace from a GitHub remote (no local clone required).
+ *
+ * This enables the "Connect any GitHub repo" flow: ONYX persists the
+ * remote-only workspace under a synthetic `github://owner/repo` path so
+ * the unique-path constraint never collides with a real local checkout.
+ * Filesystem watchers / AST snapshots are skipped — the workspace exists
+ * purely as a sync target for commits, branches, contributors and PRs.
+ *
+ * If the user later runs `connectWorkspace` against the same repo on
+ * disk, both rows coexist (different `path` values) so neither flow
+ * disturbs the other.
+ */
+interface RemoteConnectInput {
+  owner: string;
+  repo: string;
+  name?: string;
+  default_branch?: string | null;
+  language?: string | null;
+  description?: string | null;
+  visibility?: 'public' | 'private' | null;
+  html_url?: string | null;
+  ssh_url?: string | null;
+  clone_url?: string | null;
+  avatar_url?: string | null;
+  stars?: number | null;
+}
+
+export async function connectRemoteWorkspace(input: RemoteConnectInput): Promise<ConnectResult> {
+  const owner = (input.owner ?? '').trim().toLowerCase();
+  const repo = (input.repo ?? '').trim().toLowerCase();
+  if (!owner || !repo) return { ok: false, error: 'owner and repo are required' };
+  if (!/^[a-z0-9._-]+$/.test(owner) || !/^[a-z0-9._-]+$/.test(repo)) {
+    return { ok: false, error: 'invalid owner/repo characters' };
+  }
+
+  const syntheticPath = `github://${owner}/${repo}`;
+  const existing = db().prepare('SELECT * FROM workspaces WHERE path = ?').get(syntheticPath) as WorkspaceRow | undefined;
+  const gitRemote = input.clone_url ?? input.html_url ?? `https://github.com/${owner}/${repo}.git`;
+  const branch = input.default_branch ?? null;
+  const name = input.name?.trim() || `${owner}/${repo}`;
+
+  const row = rowOf({
+    id: existing?.id,
+    name,
+    path: syntheticPath,
+    framework: null,
+    package_manager: null,
+    language: input.language ?? null,
+    git_remote: gitRemote,
+    git_branch: branch,
+    status: 'attached',
+    file_count: 0,
+    meta: {
+      remote_only: true,
+      provider: 'github',
+      owner,
+      repo,
+      visibility: input.visibility ?? null,
+      description: input.description ?? null,
+      html_url: input.html_url ?? `https://github.com/${owner}/${repo}`,
+      ssh_url: input.ssh_url ?? null,
+      avatar_url: input.avatar_url ?? null,
+      stars: input.stars ?? null,
+    },
+  });
+
+  persist(row);
+
+  bus.emitReplayEvent({
+    kind: 'WORKSPACE_CONNECTED',
+    severity: 'info',
+    source: 'connector.workspace.remote',
+    target: row.name,
+    payload: { id: row.id, owner, repo, remote_only: true },
+  });
+
+  // Remote workspaces don't get filesystem watchers, but we still publish
+  // them through the same broadcast channel so the cockpit list updates.
+  broadcastUpdate(row);
+  broadcastList();
+
+  return { ok: true, workspace: row };
 }
 
 /** Auto-connect the ONYX repo itself as a demo workspace. */

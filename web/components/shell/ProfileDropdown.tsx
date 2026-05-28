@@ -11,11 +11,13 @@ import { Separator } from '@/components/ui/Separator';
 import { Badge } from '@/components/ui/Badge';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { GithubConnectModal } from '@/components/overlays/GithubConnectModal';
+import { RepoBrowserModal } from '@/components/overlays/RepoBrowserModal';
 import { cn } from '@/lib/format';
 
 export function ProfileDropdown() {
   const [open, setOpen] = useState(false);
   const [githubModalOpen, setGithubModalOpen] = useState(false);
+  const [repoBrowserOpen, setRepoBrowserOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
   const { status: authStatus } = useSession();
@@ -150,7 +152,10 @@ export function ProfileDropdown() {
 
                 {githubConnection.connected && (
                   <button
-                    onClick={() => setOpen(false)}
+                    onClick={() => {
+                      setOpen(false);
+                      setRepoBrowserOpen(true);
+                    }}
                     className="flex items-center gap-3 px-4 py-3 text-sm text-primary hover:bg-surface-sunken transition text-left"
                   >
                     <Github size={16} className="text-secondary" />
@@ -175,7 +180,10 @@ export function ProfileDropdown() {
                   </button>
                 ) : (
                   <button
-                    onClick={() => setOpen(false)}
+                    onClick={() => {
+                      setOpen(false);
+                      setRepoBrowserOpen(true);
+                    }}
                     className="w-full flex items-center justify-center gap-2 py-2 rounded text-sm font-medium text-secondary hover:bg-surface-sunken transition"
                   >
                     <Github size={14} />
@@ -205,8 +213,16 @@ export function ProfileDropdown() {
         open={githubModalOpen}
         onClose={() => setGithubModalOpen(false)}
         onConnect={() => {
-          // Handle successful connection
+          setGithubModalOpen(false);
+          // Give the session time to update, then show repo browser
+          setTimeout(() => setRepoBrowserOpen(true), 500);
         }}
+      />
+
+      {/* Repository Browser Modal */}
+      <RepoBrowserModal
+        open={repoBrowserOpen}
+        onClose={() => setRepoBrowserOpen(false)}
       />
     </>
   );

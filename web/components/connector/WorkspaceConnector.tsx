@@ -11,6 +11,7 @@ import { useOnyx } from '@/lib/store';
 import { ScanAnimation } from './ScanAnimation';
 import { TerminalLauncher } from './TerminalLauncher';
 import { GithubConnection } from './GithubConnection';
+import { RepoBrowserModal } from '@/components/overlays/RepoBrowserModal';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/format';
 
@@ -70,6 +71,7 @@ export function WorkspaceConnector({ onAttached }: { onAttached?: () => void }) 
   const [path, setPath] = useState('');
   const [name, setName] = useState('');
   const [pending, setPending] = useState(false);
+  const [repoBrowserOpen, setRepoBrowserOpen] = useState(false);
 
   const activeWs = workspaces.find((w) => w.id === activeId) ?? workspaces[0] ?? null;
 
@@ -229,15 +231,35 @@ export function WorkspaceConnector({ onAttached }: { onAttached?: () => void }) 
                 </div>
               )}
               {active && slot.id === 'github' && (
-                <div className="mt-4" onClick={(e) => e.stopPropagation()}>
+                <div className="mt-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+                  <div className="rounded-lg border border-line bg-surface-raised p-3 flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-md bg-[#10B98114] text-[#10B981] flex items-center justify-center shrink-0">
+                      <Github size={14} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12.5px] font-semibold text-primary">
+                        Browse your GitHub repositories
+                      </div>
+                      <p className="text-[11.5px] text-secondary leading-relaxed mt-0.5">
+                        Sign in with GitHub OAuth and pick <em>any</em> repository — public or
+                        private — to monitor. The selected repo is registered as a remote-only
+                        ONYX workspace and immediately starts streaming commits, branches and PRs
+                        into the cognition layer.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setRepoBrowserOpen(true)}
+                      className="btn btn-accent h-8 px-3 text-[12px] shrink-0"
+                    >
+                      <Github size={12} /> Browse repositories
+                    </button>
+                  </div>
                   {activeWs ? (
                     <GithubConnection workspace={activeWs} />
                   ) : (
-                    <div className="text-[12px] text-secondary leading-relaxed">
-                      Attach a workspace with a github remote first — ONYX auto-detects
-                      <code className="text-[#4F46E5] font-mono dark:text-indigo-300"> .git/config </code>
-                      and offers sync directly. Register a Personal Access Token here for private
-                      repositories without restarting the agent.
+                    <div className="text-[11.5px] text-tertiary leading-relaxed">
+                      Sync details for the active workspace will appear here once a repository is
+                      connected.
                     </div>
                   )}
                 </div>
@@ -265,6 +287,15 @@ export function WorkspaceConnector({ onAttached }: { onAttached?: () => void }) 
           Topology nodes materialise in real time.
         </div>
       </div>
+
+      <RepoBrowserModal
+        open={repoBrowserOpen}
+        onClose={() => setRepoBrowserOpen(false)}
+        onConnected={(id) => {
+          setActive(id);
+          onAttached?.();
+        }}
+      />
     </div>
   );
 }

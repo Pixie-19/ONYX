@@ -19,6 +19,7 @@ import { replayWindow, buildStabilityIndex } from './chrono/replay.js';
 import {
   connectWorkspace, detachWorkspace, rescanWorkspace,
   listWorkspaces, getWorkspace, restoreWorkspaces,
+  connectRemoteWorkspace,
 } from './connectors/workspace.js';
 import { startRuntimeDiscovery, listRuntimeServices } from './connectors/runtime.js';
 import {
@@ -179,6 +180,26 @@ app.post('/workspace/connect', async (req, reply) => {
     path: String(body.path ?? ''),
     name: body.name ? String(body.name) : undefined,
     mode: body.mode === 'demo' ? 'demo' : 'real',
+  });
+  if (!result.ok) { reply.code(400); return result; }
+  return result;
+});
+
+app.post('/workspace/connect-remote', async (req, reply) => {
+  const body = (req.body as any) ?? {};
+  const result = await connectRemoteWorkspace({
+    owner: String(body.owner ?? ''),
+    repo: String(body.repo ?? ''),
+    name: body.name ? String(body.name) : undefined,
+    default_branch: body.default_branch ?? null,
+    language: body.language ?? null,
+    description: body.description ?? null,
+    visibility: body.visibility === 'private' ? 'private' : (body.visibility === 'public' ? 'public' : null),
+    html_url: body.html_url ?? null,
+    ssh_url: body.ssh_url ?? null,
+    clone_url: body.clone_url ?? null,
+    avatar_url: body.avatar_url ?? null,
+    stars: typeof body.stars === 'number' ? body.stars : null,
   });
   if (!result.ok) { reply.code(400); return result; }
   return result;
