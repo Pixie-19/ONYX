@@ -88,6 +88,7 @@ export function HeaderStrip() {
       <button
         onClick={() => setCommandOpen(true)}
         className="flex items-center gap-2 px-3 h-9 rounded-md border border-line bg-surface-base hover:bg-surface-sunken transition min-w-[260px] max-w-[420px] flex-1"
+        suppressHydrationWarning
       >
         <Search size={14} className="text-tertiary" />
         <span className="text-[12.5px] text-tertiary flex-1 text-left truncate">
@@ -166,13 +167,13 @@ export function HeaderStrip() {
 
         {/* Actions */}
         <Tooltip label="Run cinematic demo (D)" side="bottom">
-          <button onClick={trigger} className="btn btn-accent h-8 px-3">
+          <button onClick={trigger} className="btn btn-accent h-8 px-3" suppressHydrationWarning>
             <Zap size={13} />
             <span className="text-[12.5px]">Run demo</span>
           </button>
         </Tooltip>
         <Tooltip label="Simulate blackout protocol (B)" side="bottom">
-          <button onClick={blackoutSim} className="btn btn-outline h-8 px-3">
+          <button onClick={blackoutSim} className="btn btn-outline h-8 px-3" suppressHydrationWarning>
             <Shield size={13} />
             <span className="text-[12.5px]">{blackout.online ? 'Blackout' : 'Restore'}</span>
           </button>
@@ -182,6 +183,7 @@ export function HeaderStrip() {
             onClick={() => setCinema(!cinema)}
             className={`btn-icon ${cinema ? 'text-[#7C3AED]' : ''}`}
             aria-label="cinema"
+            suppressHydrationWarning
           >
             <Film size={14} />
           </button>

@@ -55,6 +55,7 @@ export function ProfileDropdown() {
             open ? 'bg-surface-inset ring-1 ring-primary' : 'bg-surface-sunken hover:bg-surface-inset',
           )}
           aria-label="profile"
+          suppressHydrationWarning
         >
           {avatarUrl ? (
             <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />

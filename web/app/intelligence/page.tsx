@@ -108,11 +108,13 @@ export default function IntelligencePage() {
                   if (e.key === 'Enter') submit(prompt);
                 }}
                 className="flex-1 h-10 px-3 rounded-md border border-line bg-surface-base text-[13px] text-primary placeholder:text-tertiary outline-none focus:border-[#4F46E5] focus:shadow-focus transition"
+                suppressHydrationWarning
               />
               <button
                 onClick={() => submit(prompt)}
                 disabled={pending || !prompt.trim()}
                 className="btn btn-accent h-10 px-4 text-[13px] disabled:opacity-50"
+                suppressHydrationWarning
               >
                 <Send size={13} /> {pending ? 'Routing…' : 'Dispatch'}
               </button>
@@ -124,6 +126,7 @@ export default function IntelligencePage() {
                   key={p}
                   onClick={() => submit(p)}
                   className="text-[12px] px-3 py-1.5 rounded-full border border-line bg-surface-raised hover:border-strong hover:bg-surface-sunken text-secondary transition"
+                  suppressHydrationWarning
                 >
                   {p.length > 60 ? p.slice(0, 60) + '…' : p}
                 </button>
